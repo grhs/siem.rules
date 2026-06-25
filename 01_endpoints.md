@@ -75,7 +75,24 @@
     - EP.03.WIN.DLL.002 — DLL Sideloading
     - EP.03.WIN.DLL.003 — Phantom DLL Hijacking
     - EP.03.WIN.DLL.004 — DLL de sistema sobrescrita o reemplazada
-    - *(Pendiente: scripts de arranque, web shells, cuentas locales persistentes, GPO locales)*
+    - **Scripts de arranque**
+    - EP.03.WIN.BOOT.001 — Modificación de scripts de inicio del sistema (BootExecute, SetupExecute)
+    - EP.03.WIN.BOOT.002 — Modificación de la carpeta Startup (usuario y sistema)
+    - EP.03.WIN.BOOT.003 — WMI Event Subscription para persistencia en arranque
+    - **Web shells en servidores**
+    - EP.03.WIN.SHELL.001 — Web shell en IIS
+    - EP.03.WIN.SHELL.002 — Web shell en Apache / Nginx (Windows)
+    - EP.03.WIN.SHELL.003 — Web shell genérica: detección por comportamiento
+    - **Cuentas locales persistentes**
+    - EP.03.WIN.IDM.001 — Creación de cuenta de usuario local (detección básica)
+    - EP.03.WIN.IDM.002 — Usuario añadido a grupo Administradores local (detección básica)
+    - EP.03.WIN.ACCT.001 — Cuenta local oculta o con nombre camuflado
+    - EP.03.WIN.ACCT.002 — Reactivación de cuenta deshabilitada o manipulación de atributos
+    - EP.03.WIN.ACCT.003 — Cuenta de servicio o técnica usada como backdoor
+    - **Modificación de GPO locales**
+    - EP.03.WIN.GPO.001 — Modificación de GPO local para deshabilitar controles de seguridad
+    - EP.03.WIN.GPO.002 — Modificación de GPO local para establecer persistencia
+    - EP.03.WIN.GPO.003 — Manipulación directa de ficheros de GPO local (GptTmpl.inf, Registry.pol)
   - [EP-04 — Robo o abuso de credenciales](#ep-04--robo-o-abuso-de-credenciales)
     - EP.04.WIN.AUTH.002 — Brute force de login local
     - EP.04.WIN.IDM.003 — Modificación de cuenta de usuario
@@ -598,6 +615,270 @@ Detecciones orientadas a identificar actividad maliciosa, sospechosa o anómala 
 | **Esfuerzo** | Medio — FIM sobre System32 puede generar ruido con Windows Update. Whitelist de procesos autorizados para modificar System32 (`TrustedInstaller`, `MpSigStub.exe`, agentes de patch management). |
 | **Falsos positivos** | Medios. Windows Update modifica DLLs de sistema frecuentemente. Whitelist de procesos autorizados esencial. |
 | **Nota operativa** | Si se detecta modificación de `ntdll.dll` o `kernel32.dll` por proceso no autorizado, tratar como compromiso de máxima gravedad — estas DLLs son cargadas por prácticamente todos los procesos del sistema. Aislar el endpoint inmediatamente sin intentar remediación en caliente. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+##### Fichas detalladas — EP-03 (Scripts de arranque)
+
+---
+
+###### EP.03.WIN.BOOT.001 — Modificación de scripts de inicio del sistema (BootExecute, SetupExecute)
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante modifica las claves de registro que controlan la ejecución de programas durante las primeras fases del arranque del sistema operativo, antes de que los controles de seguridad estén completamente activos: `BootExecute` (programas ejecutados por Session Manager durante el boot, antes del login), `SetupExecute`, `PendingFileRenameOperations` (permite sustituir ficheros en el siguiente reinicio). El código se ejecuta antes que el EDR y el agente Wazuh. |
+| **Clasificación GrayHats** | 2.1 Sistema infectado / 5.1 Compromiso de cuenta con privilegios |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 13 — `TargetObject` conteniendo `HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\BootExecute`, `\SetupExecute`, `\PendingFileRenameOperations`, `\Execute`. Campos clave: `Image` (proceso que modifica), `Details` (nuevo valor). FIM — modificación de las claves anteriores con cambio de valor respecto a la línea base. |
+| **Lógica de detección** | Regla Sysmon alta confianza: Event ID 13 con `TargetObject` conteniendo `\Session Manager\BootExecute` con `Details` distinto al valor estándar (`autocheck autochk *`) → nivel 12. Regla: modificación de `\PendingFileRenameOperations` con valor que contenga ruta a ejecutable → nivel 10. Regla: cualquier escritura en `\Session Manager\Execute` o `\SetupExecute` desde proceso no de Windows Update → nivel 12. |
+| **MITRE ATT&CK** | T1542.003 — Pre-OS Boot: Bootkit / T1547.001 — Boot or Logon Autostart Execution |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Bajo — claves muy específicas con valor estándar conocido. El valor legítimo de `BootExecute` es prácticamente siempre `autocheck autochk *`. |
+| **Falsos positivos** | Muy bajos. `BootExecute` raramente se modifica en producción. `PendingFileRenameOperations` tiene uso legítimo en instalaciones de software — whitelist de procesos instaladores conocidos. |
+| **Nota operativa** | El código en `BootExecute` se ejecuta antes que el antivirus y el EDR. Si se detecta esta modificación, considerar análisis offline del disco antes de reiniciar el endpoint. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.03.WIN.BOOT.002 — Modificación de la carpeta Startup (usuario y sistema)
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante coloca un ejecutable, script o acceso directo en las carpetas de inicio automático de Windows: carpeta de sistema (`C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup`) o del usuario actual (`C:\Users\<usuario>\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup`). Cualquier fichero en estas carpetas se ejecuta automáticamente al iniciar sesión. Técnica simple y muy frecuente en malware de baja sofisticación. |
+| **Clasificación GrayHats** | 2.1 Sistema infectado / 5.3 Compromiso de aplicaciones |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 11 — creación de fichero en `C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup\` o `C:\Users\*\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\`. Campos clave: `Image` (proceso que crea), `TargetFilename`. FIM — Wazuh syscheck monitorizando esas rutas con `realtime="yes"`. |
+| **Lógica de detección** | Regla Sysmon: Event ID 11 con `TargetFilename` conteniendo `\Programs\Startup\` y extensión `.exe`, `.bat`, `.vbs`, `.ps1`, `.js`, `.lnk` desde proceso no instalador → nivel 10. Crítica: fichero `.exe` o script creado en Startup por proceso interactivo (cmd, powershell, navegador) → nivel 12. Regla FIM: cualquier fichero nuevo en carpeta Startup → nivel 8. Correlación: creación en Startup + Event ID 3 (conexión saliente del nuevo fichero) en el siguiente logon → nivel 12. |
+| **MITRE ATT&CK** | T1547.001 — Boot or Logon Autostart Execution: Registry Run Keys / Startup Folder |
+| **Severidad** | Alta |
+| **Esfuerzo** | Bajo — rutas muy específicas. FIM sobre la carpeta Startup es suficiente. Wazuh syscheck monitoriza esta ruta por defecto. |
+| **Falsos positivos** | Medios. Instaladores legítimos añaden accesos directos en Startup (Teams, Slack, OneDrive). Whitelist de ficheros `.lnk` conocidos y sus procesos creadores. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.03.WIN.BOOT.003 — WMI Event Subscription para persistencia en arranque
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante registra una suscripción de evento WMI permanente para ejecutar código malicioso ante eventos del sistema como el arranque, login de usuario o un intervalo de tiempo. Las suscripciones WMI permanentes sobreviven reinicios y son independientes del registro y de las carpetas Startup — lo que las hace especialmente difíciles de detectar. Técnica favorita de APTs avanzados. |
+| **Clasificación GrayHats** | 2.1 Sistema infectado / 5.1 Compromiso de cuenta con privilegios |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 19 (WmiEvent - Filter activity) — creación de filtro de evento WMI. Event ID 20 (WmiEvent - Consumer activity) — creación de consumidor WMI (`CommandLineEventConsumer`, `ActiveScriptEventConsumer`). Event ID 21 (WmiEvent - FilterToConsumerBinding) — enlace entre filtro y consumidor. Campos clave: `Name`, `Query` (consulta WMI del filtro), `Destination` (comando a ejecutar). |
+| **Lógica de detección** | Regla Sysmon: Event ID 19 con `Query` conteniendo `Win32_PerfFormattedData` (trigger de arranque) o `__InstanceCreationEvent` → nivel 10. Alta confianza: Event ID 20 con `ConsumerType = CommandLineEventConsumer` o `ActiveScriptEventConsumer` con `Destination` conteniendo `powershell`, `cmd`, `wscript`, `mshta` o URL → nivel 12. Crítica: Event ID 21 (binding confirmado) + Event ID 20 con destino sospechoso → nivel 12. Correlación: los tres eventos (19+20+21) desde el mismo proceso en 60s → nivel 12. |
+| **MITRE ATT&CK** | T1546.003 — Event Triggered Execution: Windows Management Instrumentation Event Subscription |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Medio — Sysmon Event IDs 19, 20 y 21 son específicos de WMI y de bajo volumen en producción. Filtrado por tipo de consumidor reduce drásticamente los FP. |
+| **Falsos positivos** | Bajos. Suscripciones WMI permanentes con consumidores de línea de comandos no tienen uso legítimo frecuente. Whitelist de nombres de filtros/consumidores conocidos de software de gestión (SCCM, Ansible). |
+| **Nota operativa** | Las suscripciones WMI se almacenan en el repositorio WMI (`C:\Windows\System32\wbem\Repository`), no en el registro ni en ficheros del sistema — invisibles para herramientas que solo analizan Run keys o carpetas Startup. Para limpiarlas usar `Get-WMIObject -Namespace root\subscription -Class __EventFilter` o Autoruns de Sysinternals. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+##### Fichas detalladas — EP-03 (Web shells en servidores)
+
+---
+
+###### EP.03.WIN.SHELL.001 — Web shell en IIS
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante ha subido o creado un web shell en un servidor IIS — un script (`.aspx`, `.ashx`, `.asmx`, `.asp`, `.cshtml`) que permite ejecutar comandos arbitrarios en el servidor a través de peticiones HTTP. La detección combina FIM sobre el directorio web, el proceso `w3wp.exe` spawneando procesos hijo anómalos, y conexiones salientes desde el proceso web. Web shells son el mecanismo de persistencia más frecuente tras la explotación de aplicaciones web. |
+| **Clasificación GrayHats** | 2.1 Sistema infectado / 5.3 Compromiso de aplicaciones |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | FIM — creación o modificación de fichero `.aspx`, `.ashx`, `.asmx`, `.asp`, `.cshtml`, `.config` en `C:\inetpub\wwwroot\` o cualquier directorio virtual de IIS. Sysmon Event ID 1 — `w3wp.exe` spawneando `cmd.exe`, `powershell.exe`, `cscript.exe`, `wscript.exe`, `certutil.exe` o ejecutable en ruta temporal. Sysmon Event ID 11 — creación de fichero ejecutable o script en directorio web por `w3wp.exe`. Sysmon Event ID 3 — conexión saliente desde `w3wp.exe` hacia IP externa. |
+| **Lógica de detección** | Regla FIM: creación de `.aspx` o `.asp` en `C:\inetpub\wwwroot\` por proceso distinto a pipeline de despliegue autorizado → nivel 10. Regla Sysmon crítica: `w3wp.exe` spawneando `cmd.exe` o `powershell.exe` → nivel 12. Regla Event ID 3: `w3wp.exe` iniciando conexión saliente a IP externa → nivel 10. Correlación: FIM (nuevo `.aspx`) + Event ID 1 (`w3wp.exe` spawneando shell) en 300s → nivel 12. |
+| **MITRE ATT&CK** | T1505.003 — Server Software Component: Web Shell / T1190 — Exploit Public-Facing Application |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Bajo-Medio — regla de `w3wp.exe` spawneando intérpretes es de alta confianza y bajo FP. FIM sobre wwwroot requiere configurar la ruta correcta y gestionar el ruido de despliegues legítimos. |
+| **Falsos positivos** | Muy bajos para `w3wp.exe` spawneando `cmd.exe`. Medios para FIM (despliegues legítimos crean ficheros `.aspx`). Whitelist de cuentas y procesos de despliegue autorizados (Jenkins, Azure DevOps, Octopus Deploy). |
+| **Nota operativa** | Preservar el fichero del web shell como evidencia antes de eliminarlo — su contenido revela el vector de entrada y puede contener credenciales hardcodeadas. Revisar los logs de acceso de IIS para identificar las peticiones al web shell y el origen del atacante. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.03.WIN.SHELL.002 — Web shell en Apache / Nginx (Windows)
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante ha subido o creado un web shell en un servidor Apache o Nginx corriendo sobre Windows — típicamente scripts `.php`, `.py`, `.pl`, `.cgi`. La detección sigue el mismo patrón que IIS pero adaptada a los procesos `httpd.exe`, `nginx.exe`, `php-cgi.exe` y a los directorios de document root habituales de Apache/Nginx en Windows. |
+| **Clasificación GrayHats** | 2.1 Sistema infectado / 5.3 Compromiso de aplicaciones |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | FIM — creación o modificación de fichero `.php`, `.py`, `.pl`, `.cgi`, `.phtml` en el document root (`C:\Apache\htdocs\`, `C:\xampp\htdocs\`, `C:\nginx\html\` o ruta configurada en httpd.conf). Sysmon Event ID 1 — `httpd.exe`, `nginx.exe`, `php-cgi.exe`, `php.exe` spawneando `cmd.exe`, `powershell.exe` o ejecutable en ruta temporal. Sysmon Event ID 3 — conexión saliente desde `httpd.exe` o `php-cgi.exe` hacia IP externa. |
+| **Lógica de detección** | Regla FIM: creación de `.php` en document root por proceso distinto a pipeline de despliegue → nivel 10. Regla Sysmon crítica: `httpd.exe` o `php-cgi.exe` spawneando `cmd.exe` o `powershell.exe` → nivel 12. Regla Event ID 3: proceso web iniciando conexión saliente → nivel 10. Correlación: FIM (nuevo `.php`) + proceso web spawneando shell en 300s → nivel 12. |
+| **MITRE ATT&CK** | T1505.003 — Server Software Component: Web Shell / T1190 — Exploit Public-Facing Application |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Medio — requiere conocer la ruta exacta del document root de cada cliente para configurar FIM. Whitelist de procesos de despliegue autorizado por cliente. |
+| **Falsos positivos** | Muy bajos para proceso web spawneando `cmd.exe`. Medios para FIM en document root (despliegues frecuentes en entornos de desarrollo). |
+| **Nota operativa** | En entornos con PHP, añadir `.htaccess` a la configuración de FIM — los atacantes lo modifican para redirigir peticiones al web shell o habilitar ejecución de PHP en directorios no esperados. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.03.WIN.SHELL.003 — Web shell genérica: detección por comportamiento
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Detección de comportamiento característico de web shell activa, independientemente del servidor web o tecnología: el proceso del servidor web ejecuta comandos del sistema, realiza conexiones salientes anómalas o accede a recursos del sistema que no corresponden a la operación normal. Esta ficha complementa SHELL.001 y SHELL.002 con detección agnóstica a la tecnología — especialmente útil cuando el servidor web no está identificado de antemano o cuando el atacante usa técnicas de ofuscación para evadir FIM. |
+| **Clasificación GrayHats** | 2.1 Sistema infectado / 5.3 Compromiso de aplicaciones |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 1 — cualquier proceso de servidor web conocido (`w3wp.exe`, `httpd.exe`, `nginx.exe`, `tomcat.exe`, `java.exe` en contexto web, `node.exe`) spawneando proceso hijo fuera de su operación normal. Sysmon Event ID 3 — conexión saliente desde proceso de servidor web hacia IP externa no de actualización o telemetría. Sysmon Event ID 10 — proceso de servidor web accediendo a `lsass.exe`. Sysmon Event ID 11 — proceso de servidor web creando fichero ejecutable fuera del document root. |
+| **Lógica de detección** | Regla Sysmon crítica: cualquier proceso de servidor web spawneando `cmd.exe`, `powershell.exe`, `wscript.exe`, `cscript.exe`, `mshta.exe`, `certutil.exe`, `bitsadmin.exe` → nivel 12. Regla Event ID 3: proceso de servidor web iniciando conexión saliente a IP no en whitelist → nivel 8. Regla Event ID 10: proceso de servidor web con acceso a `lsass.exe` → nivel 12. Regla Event ID 11: proceso de servidor web creando `.exe` o `.dll` → nivel 12. |
+| **MITRE ATT&CK** | T1505.003 — Server Software Component: Web Shell / T1059 — Command and Scripting Interpreter / T1003.001 — LSASS Memory |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Bajo — la lista de procesos de servidor web es finita y bien conocida. Las reglas de proceso web spawneando intérpretes son de la más alta confianza en todo el catálogo. |
+| **Falsos positivos** | Muy bajos. Procesos de servidor web spawneando `cmd.exe` no tienen justificación legítima en producción. Entornos de desarrollo con scripts de build integrados pueden generar FP — separar entornos de desarrollo de producción. |
+| **Nota operativa** | Esta ficha actúa como red de seguridad para web shells que evaden FIM (ficheros ofuscados, extensiones no comunes, web shells en memoria). Si solo dispara esta ficha sin FIM, el web shell puede estar en memoria o en extensión no monitorizada — investigar el historial de peticiones HTTP al servidor en el periodo previo. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+##### Fichas detalladas — EP-03 (Cuentas locales persistentes)
+
+---
+
+###### EP.03.WIN.IDM.001 — Creación de cuenta de usuario local
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Se crea una nueva cuenta de usuario local en el endpoint. En PCs de trabajador esto es altamente anómalo: la gestión de usuarios debe centralizarse en el directorio. Patrón típico de persistencia tras compromiso. |
+| **Clasificación GrayHats** | 5.1 Compromiso de cuenta con privilegios |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Canal Security — Event ID 4720 (A user account was created). |
+| **Lógica de detección** | Regla built-in 60109 (nivel 8). |
+| **MITRE ATT&CK** | T1136.001 — Create Local Account |
+| **Severidad** | Alta |
+| **Esfuerzo** | Bajo — built-in. |
+| **Falsos positivos** | Muy bajos en parque corporativo gestionado. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.03.WIN.IDM.002 — Usuario añadido a grupo Administradores local
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Una cuenta es añadida al grupo de Administradores locales del endpoint. Técnica clásica de elevación de privilegios y persistencia tras compromiso. |
+| **Clasificación GrayHats** | 5.1 Compromiso de cuenta con privilegios |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Canal Security — Event ID 4732 (A member was added to a security-enabled local group), filtrando por SID `S-1-5-32-544`. |
+| **Lógica de detección** | Regla built-in 60154 (nivel 12 cuando aplica al grupo Administradores). |
+| **MITRE ATT&CK** | T1098 — Account Manipulation |
+| **Severidad** | Alta |
+| **Esfuerzo** | Bajo — built-in. |
+| **Falsos positivos** | Bajos en parque gestionado. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.03.WIN.ACCT.001 — Cuenta local oculta o con nombre camuflado
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante crea una cuenta local con nombre diseñado para pasar desapercibido: nombre idéntico o muy similar a cuentas de sistema legítimas (`Administrator$`, `SYSTEM_`, `svc_backup`), con el sufijo `$` para ocultarla de la salida de `net user`, o con caracteres Unicode que visualmente parecen letras latinas. La cuenta se usa como backdoor persistente que sobrevive incluso si el vector de entrada original es remediado. |
+| **Clasificación GrayHats** | 5.1 Compromiso de cuenta con privilegios / 2.1 Sistema infectado |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Security log — Event ID 4720 con `SamAccountName` que termine en `$`, contenga caracteres Unicode no ASCII, o tenga nombre similar a cuentas de sistema conocidas. Sysmon Event ID 1 — `net.exe` o `net1.exe` con argumentos `user /add` y nombre sospechoso. PowerShell ScriptBlock Event ID 4104 — `New-LocalUser` con nombre camuflado. |
+| **Lógica de detección** | Regla custom: Event ID 4720 con `SamAccountName` terminando en `$` → nivel 10 (cuenta oculta a `net user`). Regla: nombre que coincida con patrón de cuenta de sistema con variación mínima → nivel 12. Regla Sysmon: `net user /add` con nombre terminado en `$` → nivel 12. Regla: Event ID 4720 seguido de Event ID 4732 (añadido a Administradores) en 60s → nivel 12. |
+| **MITRE ATT&CK** | T1136.001 — Create Account: Local Account / T1564.002 — Hide Artifacts: Hidden Users |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Medio — detección de `$` al final es directa. Detección por similitud con cuentas de sistema requiere CDB list con nombres conocidos del cliente. |
+| **Falsos positivos** | Bajos. Cuentas con `$` al final son señal clara de intención de ocultación. |
+| **Nota operativa** | Las cuentas con `$` no aparecen en `net user` pero sí en `Get-LocalUser` (PowerShell) o en herramientas forenses. Si se detecta, inventariar todas las cuentas locales del endpoint para identificar otras posibles backdoors. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.03.WIN.ACCT.002 — Reactivación de cuenta deshabilitada o manipulación de atributos
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante reactiva una cuenta de usuario previamente deshabilitada (cuentas de soporte, instalación, empleados antiguos) para usarla como backdoor sin crear una nueva cuenta que pueda llamar la atención. También incluye manipulación de atributos: establecer contraseña que nunca expira, eliminar el requisito de cambio de contraseña, desbloquear cuentas bloqueadas. |
+| **Clasificación GrayHats** | 5.1 Compromiso de cuenta con privilegios / 2.1 Sistema infectado |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Security log — Event ID 4722 (cuenta habilitada) con `SubjectUserName` distinto al propietario de la cuenta. Event ID 4738 (cuenta modificada) con cambio en flags `UserAccountControl` (`PasswordNeverExpires = true`, `PasswordNotRequired = true`). Event ID 4767 (cuenta desbloqueada). Sysmon Event ID 1 — `net user /active:yes` o `net user /expires:never` desde proceso interactivo. |
+| **Lógica de detección** | Regla custom: Event ID 4722 (cuenta habilitada) desde cuenta no de helpdesk autorizado → nivel 10. Regla: Event ID 4738 con `PasswordNeverExpires = true` desde cuenta no autorizada → nivel 8. Alta confianza: Event ID 4722 + Event ID 4624 (login exitoso de la cuenta reactivada) en 300s → nivel 12. Correlación: reactivación + Event ID 4732 (añadida a Admins) en 120s → nivel 12. |
+| **MITRE ATT&CK** | T1098 — Account Manipulation / T1136.001 — Create Account: Local Account |
+| **Severidad** | Alta |
+| **Esfuerzo** | Medio — requiere whitelist de cuentas de helpdesk autorizadas para reactivar cuentas y de cuentas de servicio con contraseña que no expira por diseño. |
+| **Falsos positivos** | Medios. Helpdesk reactiva cuentas legítimamente. La clave es el contexto: quién reactiva y si se usa inmediatamente después. |
+| **Nota operativa** | Mantener inventario actualizado de cuentas deshabilitadas por cliente. Una cuenta deshabilitada hace meses que se reactiva a las 2AM es un indicador claro de backdoor. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.03.WIN.ACCT.003 — Cuenta de servicio o técnica usada como backdoor
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante abusa de una cuenta de servicio o técnica existente (SQL Server, IIS, backup, monitorización) añadiéndola a grupos privilegiados, cambiando su contraseña para mantener acceso exclusivo, o usándola para iniciar sesiones interactivas cuando debería solo usarse para servicios. Las cuentas de servicio son objetivos atractivos por sus privilegios elevados, contraseñas estáticas y menor supervisión. |
+| **Clasificación GrayHats** | 5.1 Compromiso de cuenta con privilegios / 2.1 Sistema infectado |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Security log — Event ID 4624 con `LogonType = 2` o `10` (interactivo) para cuenta con nombre de patrón de servicio (`svc_*`, `_svc`, `sa`, `backup_*`, `monitor_*`). Event ID 4732 (añadida a grupo privilegiado) para cuenta de servicio. Event ID 4723/4724 (cambio de contraseña) en cuenta de servicio por usuario distinto al propietario del servicio. |
+| **Lógica de detección** | Regla custom: Event ID 4624 LogonType 2 o 10 desde cuenta con patrón de nombre de servicio → nivel 10 (cuenta de servicio usada interactivamente). Alta confianza: Event ID 4732 (añadir a Admins) para cuenta de servicio → nivel 12. Regla: Event ID 4724 (reset de contraseña de cuenta de servicio) por cuenta no autorizada → nivel 10. Correlación: reset de contraseña de cuenta de servicio + login interactivo de esa cuenta en 300s → nivel 12. |
+| **MITRE ATT&CK** | T1078.003 — Valid Accounts: Local Accounts / T1098 — Account Manipulation |
+| **Severidad** | Alta |
+| **Esfuerzo** | Medio — requiere CDB list de cuentas de servicio conocidas del cliente y sus patrones de uso legítimo. |
+| **Falsos positivos** | Medios. Algunas cuentas de servicio tienen logins interactivos legítimos en procedimientos de mantenimiento. Whitelist de ventanas de mantenimiento autorizadas. |
+| **Nota operativa** | Realizar un inventario de cuentas de servicio y sus privilegios reales como parte del onboarding de cada cliente — muchas tendrán privilegios excesivos que conviene reducir antes de activar esta ficha. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+##### Fichas detalladas — EP-03 (Modificación de GPO locales)
+
+---
+
+###### EP.03.WIN.GPO.001 — Modificación de GPO local para deshabilitar controles de seguridad
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante modifica la Política de Grupo Local para deshabilitar controles de seguridad del endpoint: desactivar Windows Firewall, deshabilitar Windows Defender, reducir la política de contraseñas, deshabilitar UAC, permitir la ejecución de scripts PowerShell sin restricciones (`ExecutionPolicy = Unrestricted`). Los cambios de GPO local afectan al endpoint independientemente de las GPOs del dominio y pueden sobrevivir a la desconexión del dominio. |
+| **Clasificación GrayHats** | 5.1 Compromiso de cuenta con privilegios / 2.1 Sistema infectado |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 13 — modificación de claves bajo `HKLM\SOFTWARE\Policies\Microsoft\Windows\`, `\Policies\Microsoft\Windows Defender\`, `\Policies\Microsoft\Windows\PowerShell\`. Security log — Event ID 4719 (audit policy changed). Sysmon Event ID 1 — `secedit.exe /configure` desde proceso no autorizado. |
+| **Lógica de detección** | Regla Sysmon: Event ID 13 con `TargetObject` conteniendo `\Windows Defender\DisableAntiSpyware = 1` o `DisableRealtimeMonitoring = 1` → nivel 12. Regla: `\Policies\Microsoft\Windows\PowerShell\ExecutionPolicy` con valor `Unrestricted` o `Bypass` → nivel 10. Regla: modificación de `\WindowsFirewall\` deshabilitando el firewall → nivel 10. Correlación: múltiples modificaciones de políticas de seguridad en 300s → nivel 12 (desmantelamiento sistemático de controles). |
+| **MITRE ATT&CK** | T1562.001 — Impair Defenses: Disable or Modify Tools / T1562.002 — Disable Windows Event Logging / T1562.004 — Disable or Modify System Firewall |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Medio — claves de registro de GPO específicas. FP bajo en entornos correctamente gestionados donde las GPOs se aplican desde el DC. |
+| **Falsos positivos** | Bajos. Modificaciones de GPO local legítimas son raras en endpoints de dominio. |
+| **Nota operativa** | En endpoints de dominio, revisar también si las GPOs del dominio están siendo bloqueadas (`Block Inheritance`) en la OU del endpoint cuando dispara esta ficha. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.03.WIN.GPO.002 — Modificación de GPO local para establecer persistencia
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante modifica la GPO local para registrar scripts de inicio, apagado, logon o logoff que ejecutan código malicioso en cada arranque o sesión de usuario. A diferencia de BOOT.002 (carpetas Startup) y LOGON.002 (scripts en el registro), esta ficha se centra en la configuración de scripts a través del mecanismo de GPO local — más difícil de detectar porque los scripts pueden estar en rutas de sistema aparentemente legítimas. |
+| **Clasificación GrayHats** | 2.1 Sistema infectado / 5.3 Compromiso de aplicaciones |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 11 — creación o modificación de ficheros en `C:\Windows\System32\GroupPolicy\Machine\Scripts\` o `C:\Windows\System32\GroupPolicy\User\Scripts\`. FIM — modificación de `scripts.ini` en subdirectorios Startup, Shutdown, Logon, Logoff de GroupPolicy. Sysmon Event ID 1 — `gpedit.msc` o `secedit.exe` ejecutados desde proceso no administrativo. |
+| **Lógica de detección** | Regla Sysmon: Event ID 11 con `TargetFilename` conteniendo `\GroupPolicy\Machine\Scripts\Startup\` o `\GroupPolicy\User\Scripts\Logon\` por proceso no de administración → nivel 12. Regla FIM: modificación de `scripts.ini` en cualquier subdirectorio de GroupPolicy → nivel 10. Regla: creación de script (`.bat`, `.vbs`, `.ps1`) en directorio de GroupPolicy por proceso interactivo → nivel 12. |
+| **MITRE ATT&CK** | T1037.001 — Boot or Logon Initialization Scripts: Logon Script (Windows) / T1037.003 — Network Logon Script |
+| **Severidad** | Alta |
+| **Esfuerzo** | Medio — FIM sobre los directorios de GroupPolicy es el mecanismo principal. Requiere configurar correctamente las rutas en `agent.conf`. |
+| **Falsos positivos** | Bajos. Modificaciones de scripts de GPO local son raras en endpoints de dominio gestionados. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.03.WIN.GPO.003 — Manipulación directa de ficheros de GPO local (GptTmpl.inf, Registry.pol)
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante modifica directamente los ficheros de configuración de la GPO local para alterar políticas de seguridad sin usar las herramientas estándar: `GptTmpl.inf` (configuración de seguridad: contraseñas, auditoría, derechos de usuario), `Registry.pol` (configuración de registro aplicada por GPO), `gpt.ini` (versión de la GPO). La modificación directa es más sigilosa porque puede no generar los mismos eventos de auditoría que el uso de herramientas de gestión. |
+| **Clasificación GrayHats** | 2.1 Sistema infectado / 5.1 Compromiso de cuenta con privilegios |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | FIM — modificación de `C:\Windows\System32\GroupPolicy\Machine\Microsoft\Windows NT\SecEdit\GptTmpl.inf`, `C:\Windows\System32\GroupPolicy\Machine\Registry.pol`, `\User\Registry.pol`, `C:\Windows\System32\GroupPolicy\gpt.ini`. Sysmon Event ID 11 — escritura en cualquiera de estos ficheros por proceso no de herramientas de administración de GPO. |
+| **Lógica de detección** | Regla FIM: modificación de `GptTmpl.inf` por proceso distinto a `gpedit.msc`, `secedit.exe`, `mmc.exe` o agente autorizado → nivel 12. Regla: modificación de `Registry.pol` por proceso no de gestión de GPO → nivel 10. Correlación: modificación de `gpt.ini` + modificación de `GptTmpl.inf` o `Registry.pol` en 60s → nivel 12 (actualización completa de GPO local). |
+| **MITRE ATT&CK** | T1484.001 — Domain Policy Modification: Group Policy Modification / T1562.001 — Impair Defenses |
+| **Severidad** | Alta |
+| **Esfuerzo** | Bajo — rutas de fichero muy específicas. FIM sobre los ficheros de GPO local es suficiente y de bajo volumen. |
+| **Falsos positivos** | Muy bajos. Modificación directa de `GptTmpl.inf` o `Registry.pol` fuera de herramientas de administración es prácticamente siempre anómala. |
+| **Nota operativa** | Los cambios no se aplican inmediatamente — se aplican en el siguiente refresh de GPO (90 minutos por defecto o en reinicio/logon). Actuar antes del siguiente refresh para evitar que los cambios surtan efecto. El campo `Details` de FIM muestra el contenido modificado — revisar qué configuración exacta ha cambiado. |
 | **Estado** | Pendiente de validación. |
 
 ---
