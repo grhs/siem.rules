@@ -97,14 +97,54 @@
     - EP.04.WIN.AUTH.002 — Brute force de login local
     - EP.04.WIN.IDM.003 — Modificación de cuenta de usuario
     - EP.04.WIN.IDM.004 — Cambio de contraseña por otro usuario
+    - EP.04.WIN.SAM.001 — Acceso a SAM/SYSTEM/SECURITY para extracción de hashes
+    - EP.04.WIN.TOKEN.001 — Extracción y abuso de tokens de acceso
+    - EP.04.WIN.BROWSER.001 — Robo de cookies y credenciales de navegador
+    - EP.04.WIN.VAULT.001 — Acceso a Credential Manager y vaults locales
+    - EP.04.WIN.PLAIN.001 — Credenciales en texto plano en ficheros, scripts y registro
+  - [EP-05 — Movimiento lateral](#ep-05--movimiento-lateral)
+    - EP.05.WIN.LAT.001 — Conexiones RDP laterales entre endpoints
+    - EP.05.WIN.LAT.002 — Acceso a shares administrativos (C$, ADMIN$, IPC$)
+    - EP.05.WIN.LAT.003 — Autenticaciones NTLM laterales inusuales
+    - EP.05.WIN.LAT.004 — Herramientas administrativas usadas fuera de patrón
+    - EP.05.WIN.LAT.005 — Correlación: perfil de movimiento lateral activo
+  - [EP-06 — Exfiltración o preparación de exfiltración](#ep-06--exfiltración-o-preparación-de-exfiltración)
+    - EP.06.WIN.EXFIL.001 — Herramientas de transferencia de ficheros (rclone, WinSCP, curl, scp, ftp)
+    - EP.06.WIN.EXFIL.002 — Subida a servicios cloud no autorizados
+    - EP.06.WIN.EXFIL.003 — Copia masiva a dispositivos USB
+    - EP.06.WIN.EXFIL.004 — Acceso masivo a carpetas sensibles o fuera de horario
+    - EP.06.WIN.EXFIL.005 — Correlación: preparación y exfiltración confirmada
+  - [EP-07 — Uso anómalo de herramientas legítimas (LOLBins)](#ep-07--uso-anómalo-de-herramientas-legítimas-lolbins)
+    - EP.07.WIN.LOLBIN.001 — PowerShell ofensivo: obfuscación, AMSI bypass, reflective loading
+    - EP.07.WIN.LOLBIN.002 — Proxy de ejecución: Regsvr32, Rundll32, Mshta, Cscript/Wscript
+    - EP.07.WIN.LOLBIN.003 — Netsh como proxy de red o persistencia
+    - EP.07.WIN.LOLBIN.004 — Cmd.exe encadenado con scripts complejos
+    - EP.07.WIN.LOLBIN.005 — Certutil y Bitsadmin para decode/encode y evasión
+    - EP.07.WIN.LOLBIN.006 — Correlación: patrón LOLBin multi-herramienta
   - [EP-08 — Comportamiento anómalo del usuario o del equipo](#ep-08--comportamiento-anómalo-del-usuario-o-del-equipo)
     - EP.08.WIN.AUTH.004 — Login interactivo con cuenta privilegiada
+    - EP.08.WIN.UBA.001 — Actividad fuera del horario habitual del usuario
+    - EP.08.WIN.UBA.002 — Inicio de sesión desde equipo o ubicación no habitual
+    - EP.08.WIN.UBA.003 — Ejecución de procesos inusuales para ese usuario o equipo
+    - EP.08.WIN.UBA.004 — Uso intensivo de CPU/disco por proceso desconocido (criptominería, ransomware)
+    - EP.08.WIN.UBA.005 — Actividad administrativa desde usuario no técnico
   - [EP-09 — Violación de políticas de seguridad](#ep-09--violación-de-políticas-de-seguridad)
     - EP.09.WIN.FIM.001 — Modificación de ficheros críticos del sistema
+    - EP.09.WIN.POL.001 — EDR SentinelOne parado, manipulado o desinstalado
+    - EP.09.WIN.POL.002 — Firewall local de Windows desactivado
+    - EP.09.WIN.POL.003 — Shadow Copies eliminadas o servicio VSS manipulado ⚠️ máxima prioridad
+    - EP.09.WIN.POL.004 — Software prohibido instalado o ejecutado
+    - EP.09.WIN.POL.005 — Macros de Office habilitadas desde documento externo
+    - EP.09.WIN.POL.006 — Software obsoleto o sin parches ejecutándose
   - [EP-10 — Manipulación defensiva y evasión](#ep-10--manipulación-defensiva-y-evasión)
     - EP.10.WIN.AUDIT.001 — Limpieza del log de auditoría de seguridad
     - EP.10.WIN.AUDIT.002 — Modificación de la política de auditoría
     - EP.10.WIN.AV.001 — Microsoft Defender deshabilitado o manipulado
+    - EP.10.WIN.DEF.001 — Parada de servicios de seguridad
+    - EP.10.WIN.DEF.002 — Cambios en exclusiones de AV/Defender
+    - EP.10.WIN.DEF.003 — Borrado de logs de Windows (todos los canales)
+    - EP.10.WIN.DEF.004 — Herramientas anti-forense (SDelete, timestomping, Eraser)
+    - EP.10.WIN.DEF.005 — Correlación: perfil completo de evasión defensiva
 - [1.3 Linux](#13-linux) *(pendiente)*
 - [1.4 macOS](#14-macos) *(pendiente)*
 
@@ -117,58 +157,6 @@ Detecciones orientadas a identificar actividad maliciosa, sospechosa o anómala 
 ---
 
 ### 1.1 Windows
-
-#### Alcance de la Windows
-
-**Familias cubiertas:**
-
-- **WIN.AUTH.\*** — Autenticación y acceso: fuerza bruta, cuentas bloqueadas, sesiones privilegiadas.
-- **WIN.IDM.\*** — Gestión de identidad: creación/modificación de cuentas, cambios en grupos privilegiados.
-- **WIN.AUDIT.\*** — Auditoría: limpieza de logs, modificación de política de auditoría.
-- **WIN.PERS.\*** — Persistencia: instalación de servicios, tareas programadas.
-- **WIN.AV.\*** — Protección antimalware: manipulación de Defender y detecciones.
-- **WIN.FIM.\*** — Integridad de ficheros: modificación de ficheros críticos del sistema.
-
-**Casos de uso pendientes de desarrollo:**
-
-- Credential dumping (acceso a LSASS)
-- Persistencia en claves de registro (Run, RunOnce, AppInit_DLLs)
-- Ejecución sospechosa de procesos (rutas anómalas, LOLBin)
-- Análisis de PowerShell ScriptBlock
-- Detección heurística de ransomware en tiempo real (la aporta el EDR)
-- Comunicaciones C2 salientes (requiere visibilidad de red)
-
-#### Telemetría requerida en el agente
-
-| Canal | Casos de uso que alimenta | Por defecto |
-|---|---|---|
-| Security | AUTH.001-004, IDM.001-004, AUDIT.001-002, PERS.002 | Sí |
-| System | PERS.001, AV.001 (parada servicio Defender) | Sí |
-| Windows Defender/Operational | AV.001, AV.002 | No |
-| TaskScheduler/Operational | PERS.002 (alternativa con detalle) | No |
-| Módulo FIM (syscheck) | FIM.001 | Sí |
-
-#### Catálogo resumido
-
-| ID | Caso de uso | MITRE | Sev. | Built-in |
-|---|---|---|---|---|
-| EP.01.WIN.AV.001 | Malware detectado por SentinelOne | Variable | Variable | Comunitario |
-| EP.01.WIN.AV.002 | Malware detectado por Defender | — | Variable | Sí |
-| EP.01.WIN.AV.003 | Malware detectado por GravityZone | Variable | Variable | Comunitario |
-| EP.02.WIN.AUTH.001 | Brute force remoto (RDP/SMB/WinRM) | T1110 | Alta | Sí |
-| EP.02.WIN.AUTH.003 | Cuenta de usuario bloqueada | T1110 | Alta | Sí |
-| EP.03.WIN.IDM.001 | Creación de cuenta local | T1136.001 | Alta | Sí |
-| EP.03.WIN.IDM.002 | Añadido a grupo Administradores | T1098 | Alta | Sí |
-| EP.03.WIN.PERS.001 | Instalación de servicio nuevo | T1543.003 | Media-Alta | Sí |
-| EP.03.WIN.PERS.002 | Tarea programada creada/modificada | T1053.005 | Media-Alta | Sí |
-| EP.04.WIN.AUTH.002 | Brute force local (consola/teclado) | T1110.001 | Media-Alta | Custom |
-| EP.04.WIN.IDM.003 | Modificación de cuenta de usuario | T1098 | Media | Sí |
-| EP.04.WIN.IDM.004 | Cambio de contraseña por otro usuario | T1098 | Media | Sí |
-| EP.08.WIN.AUTH.004 | Login interactivo privilegiado | T1078 | Media | Sí |
-| EP.09.WIN.FIM.001 | Modificación de ficheros críticos | T1565.001 | Media | Sí |
-| EP.10.WIN.AUDIT.001 | Limpieza del log de seguridad | T1070.001 | Crítica | Sí |
-| EP.10.WIN.AUDIT.002 | Modificación de política de auditoría | T1562.002 | Alta | Sí |
-| EP.10.WIN.AV.001 | Defender deshabilitado o manipulado | T1562.001 | Alta | Sí |
 
 ---
 
@@ -936,6 +924,415 @@ Detecciones orientadas a identificar actividad maliciosa, sospechosa o anómala 
 
 ---
 
+##### Fichas detalladas — EP-04 (Robo de credenciales avanzado)
+
+---
+
+###### EP.04.WIN.SAM.001 — Acceso a SAM/SYSTEM/SECURITY para extracción de hashes
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante intenta acceder o copiar los ficheros SAM, SYSTEM y SECURITY del registro de Windows para extraer los hashes NTLM de las cuentas locales offline. SAM contiene los hashes de contraseñas de cuentas locales cifrados con la clave SYSKEY almacenada en SYSTEM. Con ambos ficheros, herramientas como `secretsdump.py` o Mimikatz (`lsadump::sam`) pueden extraer todos los hashes sin necesidad de acceder a LSASS en caliente. Técnica frecuente como alternativa a LSASS dumping cuando PPL está activo. |
+| **Clasificación GrayHats** | 5.1 Compromiso de cuenta con privilegios / 7.1 Acceso no autorizado a información |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 11 — creación de copia de `SAM`, `SYSTEM` o `SECURITY` en ruta temporal. Sysmon Event ID 1 — `reg.exe save HKLM\SAM`, `reg.exe save HKLM\SYSTEM`, `reg.exe save HKLM\SECURITY` desde proceso no de backup autorizado. PowerShell ScriptBlock Event ID 4104 — acceso directo a claves SAM. Security log — Event ID 4656 (handle requested to SAM object) con acceso de lectura desde proceso no de sistema. Sysmon Event ID 1 — `vssadmin create shadow` seguido de copia de ficheros SAM desde shadow copy. |
+| **Lógica de detección** | Regla Sysmon alta confianza: `reg.exe` con argumentos `save HKLM\SAM` o `save HKLM\SYSTEM` → nivel 12. Regla: `vssadmin.exe create shadow` desde proceso no de backup + creación de fichero `SAM` en ruta temporal en 300s → nivel 12 (VSS SAM dump). Regla: `ntdsutil.exe` con argumento `ifm` → nivel 12. Regla PowerShell: acceso a `HKLM:\SAM\SAM\Domains\Account\Users` → nivel 10. |
+| **MITRE ATT&CK** | T1003.002 — OS Credential Dumping: Security Account Manager / T1003.003 — NTDS |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Bajo — comandos de volcado de SAM muy específicos y raramente legítimos. |
+| **Falsos positivos** | Muy bajos. `reg save HKLM\SAM` fuera de procesos de backup documentados es prácticamente siempre malicioso. |
+| **Recomendación de hardening** | Restringir acceso a `reg save` de claves sensibles mediante GPO. Monitorizar y limitar el uso de VSS a cuentas de backup autorizadas. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.04.WIN.TOKEN.001 — Extracción y abuso de tokens de acceso
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante roba o duplica tokens de acceso de procesos privilegiados para ejecutar código en ese contexto de seguridad sin conocer las credenciales del usuario. Esta ficha cubre el robo de tokens como técnica de acceso a credenciales y recursos, complementando PRIVESC.002 que lo cubre desde el ángulo de escalada de privilegios. |
+| **Clasificación GrayHats** | 5.1 Compromiso de cuenta con privilegios / 7.1 Acceso no autorizado a información |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Security log — Event ID 4624 con `ImpersonationLevel = Impersonation` o `Delegation` desde proceso no de sistema. Event ID 4648 (explicit credentials used) desde proceso interactivo. Sysmon Event ID 8 (CreateRemoteThread) hacia proceso con token privilegiado. PowerShell ScriptBlock Event ID 4104 — `[System.Security.Principal.WindowsIdentity]::Impersonate`, `DuplicateToken`, `ImpersonateLoggedOnUser`. |
+| **Lógica de detección** | Regla Security log: Event ID 4648 desde proceso no administrativo conocido con cuenta distinta al usuario de la sesión → nivel 8. Regla: Event ID 4624 con `ImpersonationLevel = Delegation` desde proceso de usuario estándar → nivel 10. Regla PowerShell: `Impersonate`, `DuplicateToken`, `ImpersonateLoggedOnUser` desde proceso no de gestión → nivel 10. Correlación: `runas /savecred` + acceso a recurso privilegiado en 60s → nivel 10. |
+| **MITRE ATT&CK** | T1134 — Access Token Manipulation / T1134.001 — Token Impersonation/Theft / T1134.003 — Make and Impersonate Token |
+| **Severidad** | Alta |
+| **Esfuerzo** | Medio — requiere distinguir usos legítimos de impersonation (servicios de sistema) de usos maliciosos. El campo `ImpersonationLevel` es el discriminador clave. |
+| **Falsos positivos** | Medios. Muchos servicios legítimos usan impersonation. La combinación con proceso origen no de sistema y cuenta destino privilegiada reduce los FP. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.04.WIN.BROWSER.001 — Robo de cookies y credenciales de navegador
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante extrae credenciales guardadas, cookies de sesión y tokens de autenticación almacenados por los navegadores web (Chrome, Edge, Firefox). Las credenciales se cifran con DPAPI ligado al perfil del usuario — desde el contexto del usuario comprometido pueden descifrarse sin contraseña adicional. Las cookies de sesión permiten bypasear MFA completamente. Técnica muy frecuente en infostealers (Redline, Vidar, Raccoon) y en post-explotación manual. |
+| **Clasificación GrayHats** | 7.1 Acceso no autorizado a información / 5.1 Compromiso de cuenta con privilegios |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 11 — acceso de lectura a ficheros de credenciales de navegador: `C:\Users\*\AppData\Local\Google\Chrome\User Data\Default\Login Data`, `\Default\Cookies`, `AppData\Local\Microsoft\Edge\User Data\Default\Login Data`, `AppData\Roaming\Mozilla\Firefox\Profiles\*\logins.json`, `key4.db`. Sysmon Event ID 1 — herramientas conocidas (`SharpChrome.exe`, `HackBrowserData.exe`, `BrowserGhost.exe`). |
+| **Lógica de detección** | Regla Sysmon: Event ID 11 con `TargetFilename` conteniendo `\Chrome\User Data\Default\Login Data` o `\Edge\User Data\Default\Login Data` desde proceso distinto al navegador → nivel 10. Crítica: mismo patrón desde proceso en `%TEMP%` o `%APPDATA%` → nivel 12. Regla Event ID 1: `Image` conteniendo `sharpchrome`, `hackbrowserdata`, `browserghost`, `chromecookiesview` → nivel 12. Correlación: acceso a `Login Data` de Chrome + Edge + `logins.json` de Firefox desde mismo proceso en 60s → nivel 12 (recolección masiva). |
+| **MITRE ATT&CK** | T1555.003 — Credentials from Web Browsers / T1539 — Steal Web Session Cookie |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Bajo — rutas de ficheros de credenciales de navegador fijas y bien conocidas. Alta confianza al detectar proceso no-navegador accediendo a estos ficheros. |
+| **Falsos positivos** | Bajos. Gestores de contraseñas legítimos acceden a sus propios ficheros, no a los del navegador. |
+| **Nota operativa** | Las cookies de sesión robadas permiten bypasear MFA completamente. Si se detecta esta ficha, invalidar todas las sesiones activas del usuario en servicios web críticos (M365, CRM, banca) de forma inmediata. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.04.WIN.VAULT.001 — Acceso a Credential Manager y vaults locales
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante extrae credenciales almacenadas en el Credential Manager de Windows (credenciales de red, credenciales genéricas, certificados). El Credential Manager puede contener credenciales de dominio, VPN, RDP y servicios cloud. Técnicas: `cmdkey /list` para enumerar, Mimikatz `dpapi::cred`, `vaultcmd /list`, acceso directo a `%APPDATA%\Microsoft\Credentials\`. |
+| **Clasificación GrayHats** | 7.1 Acceso no autorizado a información / 5.1 Compromiso de cuenta con privilegios |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 1 — `cmdkey.exe /list` o `vaultcmd.exe /list` desde proceso interactivo no administrativo. PowerShell ScriptBlock Event ID 4104 — `[Windows.Security.Credentials.PasswordVault]::new()`, `Get-StoredCredential`. Sysmon Event ID 11 — acceso de lectura a `%APPDATA%\Microsoft\Credentials\` desde proceso no de sistema. Sysmon Event ID 1 — Mimikatz con módulo `dpapi::cred` o `sekurlsa::dpapi`. |
+| **Lógica de detección** | Regla Sysmon: `cmdkey.exe` con argumento `/list` desde proceso interactivo → nivel 6. Regla: `vaultcmd.exe` con `/list` desde proceso no administrativo → nivel 8. Regla: acceso de lectura a `%APPDATA%\Microsoft\Credentials\` desde proceso distinto a `lsass.exe` o `svchost.exe` → nivel 10. Crítica: Mimikatz con módulo `dpapi` → nivel 12. Correlación: `cmdkey /list` + acceso a directorio Credentials en 120s → nivel 10. |
+| **MITRE ATT&CK** | T1555.004 — Credentials from Windows Credential Manager / T1555 — Credentials from Password Stores |
+| **Severidad** | Alta |
+| **Esfuerzo** | Medio — acceso al directorio Credentials puede generar FP con procesos de sistema. La combinación enumeración + acceso al directorio es el indicador de mayor confianza. |
+| **Falsos positivos** | Medios. `cmdkey /list` tiene uso legítimo frecuente. Discriminador: proceso origen interactivo vs proceso de sistema. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.04.WIN.PLAIN.001 — Credenciales en texto plano en ficheros, scripts y registro
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante busca credenciales almacenadas en texto plano en el endpoint: ficheros de configuración con contraseñas hardcodeadas (`.config`, `.xml`, `.ini`, `.env`, `web.config`), scripts PowerShell o batch con credenciales, claves de registro con contraseñas, historial de comandos PowerShell (`ConsoleHost_history.txt`), ficheros de respuesta de instalación (`unattend.xml`, `sysprep.inf`). Muchos entornos corporativos tienen credenciales en texto plano en ubicaciones predecibles. |
+| **Clasificación GrayHats** | 7.1 Acceso no autorizado a información / 5.1 Compromiso de cuenta con privilegios |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 1 — `findstr /si password`, `Select-String -Pattern password`, `grep -r password`. PowerShell ScriptBlock Event ID 4104 — búsqueda de patrones de credenciales en ficheros. Sysmon Event ID 11 — acceso de lectura a `C:\Windows\Panther\unattend.xml`, `C:\Windows\system32\sysprep\unattend.xml`, `C:\Windows\system32\sysprep\sysprep.inf`. |
+| **Lógica de detección** | Regla Sysmon: `findstr.exe` con `/si` y término `password`, `passwd`, `credential`, `secret`, `apikey` → nivel 8. Regla PowerShell: `Select-String` + patrón de credencial en múltiples ficheros en 60s → nivel 10. Alta confianza: acceso de lectura a `unattend.xml` o `sysprep.inf` desde proceso no de instalación → nivel 10. Regla: acceso a `ConsoleHost_history.txt` desde proceso no de PowerShell → nivel 8. Correlación: `findstr` con término de credencial + acceso a múltiples ficheros de configuración en 300s → nivel 12. |
+| **MITRE ATT&CK** | T1552.001 — Unsecured Credentials: Credentials In Files / T1552.002 — Credentials in Registry / T1552.004 — Private Keys |
+| **Severidad** | Alta |
+| **Esfuerzo** | Medio — `findstr` con términos de credencial puede generar volumen alto. El parámetro `/si` (recursivo) y la correlación con múltiples accesos son los discriminadores clave. |
+| **Falsos positivos** | Medios. Desarrolladores y administradores buscan ficheros de configuración legítimamente. La búsqueda recursiva desde directorios de sistema es el indicador de actividad maliciosa. |
+| **Nota operativa** | Si se detecta acceso a `unattend.xml` o `sysprep.inf`, revisar inmediatamente su contenido — con frecuencia contienen la contraseña del administrador local en texto plano. Si contienen credenciales, forzar reset en todos los endpoints desplegados con esa imagen. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+##### EP-05 — Movimiento lateral
+
+> ¿Este endpoint está siendo usado para moverse hacia otros sistemas?
+
+---
+
+##### Fichas detalladas — EP-05 (Movimiento lateral)
+
+---
+
+###### EP.05.WIN.LAT.001 — Conexiones RDP laterales entre endpoints
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un endpoint establece conexiones RDP hacia otros endpoints de la red interna — no desde Internet sino de máquina a máquina dentro de la red corporativa. En entornos bien gestionados, RDP lateral entre endpoints de usuario es anómalo: los administradores se conectan desde jumpboxes, no desde PCs de usuario. Patrón habitual de movimiento lateral tras comprometer un endpoint de usuario. |
+| **Clasificación GrayHats** | 5.1 Compromiso de cuenta con privilegios / 4.2 Intento de acceso con vulneración de credenciales |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 3 — conexión TCP saliente desde `mstsc.exe` hacia IP interna en puerto 3389. Security log — Event ID 4648 con aplicación `TERMSRV/` seguido de IP interna. En el sistema destino: Event ID 4624 LogonType 10 con IP origen de otro endpoint de usuario. |
+| **Lógica de detección** | Regla Sysmon: Event ID 3 con `Image = mstsc.exe` y `DestinationPort = 3389` hacia IP interna desde equipo de usuario estándar → nivel 8. Alta prioridad: Event ID 4624 LogonType 10 en endpoint de usuario con `IpAddress` de otro endpoint de usuario (no jumpbox) → nivel 10. Correlación: `mstsc.exe` iniciando conexión + Event ID 4624 LogonType 10 en destino en 60s → nivel 12. Regla adicional: mismo endpoint iniciando RDP a 3+ hosts distintos en 300s → nivel 12 (RDP scanning lateral). |
+| **MITRE ATT&CK** | T1021.001 — Remote Services: Remote Desktop Protocol |
+| **Severidad** | Alta |
+| **Esfuerzo** | Medio — requiere CDB list de IPs de jumpboxes y servidores de administración autorizados. |
+| **Falsos positivos** | Medios. Soporte técnico usa RDP entre equipos legítimamente. La clave es el origen: RDP desde PC de usuario estándar es sospechoso; desde jumpbox es normal. |
+| **Diferencia con NET.01.WIN.RDP.001** | NET.01.WIN.RDP.001 detecta RDP entrante desde Internet. Esta ficha detecta RDP lateral interno entre IPs internas. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.05.WIN.LAT.002 — Acceso a shares administrativos (C$, ADMIN$, IPC$)
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un endpoint accede a los shares administrativos ocultos de otro sistema interno: `C$` (raíz del disco C), `ADMIN$` (directorio de Windows), `IPC$` (comunicación entre procesos). El acceso a estos shares requiere credenciales de administrador local y es el mecanismo subyacente de herramientas como PsExec, Impacket y CrackMapExec para el movimiento lateral. El acceso desde un endpoint de usuario a shares administrativos de otro endpoint es altamente anómalo. |
+| **Clasificación GrayHats** | 5.1 Compromiso de cuenta con privilegios / 7.1 Acceso no autorizado a información |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Security log en el sistema destino — Event ID 5140 con `ShareName` = `\\*\C$`, `\\*\ADMIN$`, `\\*\IPC$` y `IpAddress` de otro endpoint de usuario. Event ID 5145 con shares administrativos. En el sistema origen: Sysmon Event ID 3 — conexión TCP a puerto 445 de host interno desde proceso no de backup o administración autorizado. |
+| **Lógica de detección** | Regla Security log: Event ID 5140 con `ShareName` conteniendo `C$` o `ADMIN$` desde IP que no sea servidor de administración o backup → nivel 10. Crítica: mismo patrón con cuenta de usuario estándar → nivel 12. Regla Sysmon: Event ID 3 desde `net.exe`, `cmd.exe`, `powershell.exe` a puerto 445 de host interno → nivel 8. Correlación: acceso a `C$` + creación de fichero en la ruta accedida en 300s → nivel 12 (acceso + staging confirmado). |
+| **MITRE ATT&CK** | T1021.002 — Remote Services: SMB/Windows Admin Shares / T1570 — Lateral Tool Transfer |
+| **Severidad** | Alta |
+| **Esfuerzo** | Medio — requiere que el sistema destino tenga agente Wazuh y auditoría de Object Access activa. |
+| **Falsos positivos** | Medios. Backups, SCCM y herramientas de gestión acceden a shares administrativos legítimamente. Whitelist de cuentas de servicio y servidores de gestión autorizados. |
+| **Nota operativa** | El acceso a `IPC$` puede ser legítimo. El acceso a `C$` o `ADMIN$` desde un endpoint de usuario es siempre sospechoso y merece investigación inmediata. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.05.WIN.LAT.003 — Autenticaciones NTLM laterales inusuales
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un endpoint genera un volumen inusual de autenticaciones NTLM hacia múltiples hosts internos en ventana corta — patrón de movimiento lateral mediante Pass-the-Hash o uso de credenciales robadas para pivotar entre sistemas. A diferencia de EP.02.WIN.CRED.002 (que detecta PTH desde el DC), esta ficha se centra en el patrón de autenticaciones laterales desde el endpoint origen. |
+| **Clasificación GrayHats** | 5.1 Compromiso de cuenta con privilegios / 4.2 Intento de acceso con vulneración de credenciales |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Security log en el endpoint origen — Event ID 4648 hacia múltiples `TargetServerName` distintos en ventana corta. Security log en endpoints destino — Event ID 4624 LogonType 3 con `AuthenticationPackageName = NTLM` desde la misma IP origen. Sysmon Event ID 3 — múltiples conexiones TCP a puerto 445 o 135 de hosts internos distintos desde proceso interactivo. |
+| **Lógica de detección** | Regla correlación: Event ID 4648 hacia 3+ `TargetServerName` distintos en 300s → nivel 10. Crítica: misma cuenta con Event ID 4624 LogonType 3 NTLM en 3+ endpoints distintos en 300s → nivel 12 (PTH lateral confirmado). Regla Sysmon: proceso interactivo iniciando conexiones a puerto 445 de 5+ IPs internas en 60s → nivel 10. |
+| **MITRE ATT&CK** | T1550.002 — Pass the Hash / T1021.002 — SMB/Windows Admin Shares / T1078 — Valid Accounts |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Alto — requiere correlación entre eventos de múltiples endpoints. La normalización del campo de IP origen es el principal reto técnico. |
+| **Falsos positivos** | Medios. Scripts de administración y herramientas de monitorización generan autenticaciones hacia múltiples hosts. Whitelist de cuentas de servicio y servidores de administración. |
+| **Relación con otros CU** | Complementa EP.02.WIN.CRED.002 (PTH visto desde el DC) con visibilidad desde el endpoint origen y los endpoints destino. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.05.WIN.LAT.004 — Herramientas administrativas usadas fuera de patrón
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Herramientas de administración remota legítimas (RSAT, MMC remoto, WMIC remoto, WinRM, `dsquery`, `nltest`) son usadas desde un endpoint de usuario estándar — indicador de Living off the Land lateral. Estas herramientas son confiables para el sistema operativo pero su uso desde un PC de usuario hacia múltiples destinos o fuera de horario es indicador de actividad maliciosa. |
+| **Clasificación GrayHats** | 5.1 Compromiso de cuenta con privilegios / 3.1 Escaneo de redes (scanning) |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 1 — `wmic.exe` con argumento `/node:`, `winrs.exe`, `dsquery.exe` con scope de dominio, `nltest.exe /dclist` o `/domain_trusts`, `net.exe` con comandos de administración remota. PowerShell ScriptBlock Event ID 4104 — `Invoke-Command -ComputerName`, `Enter-PSSession -ComputerName`, `Get-WmiObject -ComputerName`. |
+| **Lógica de detección** | Regla Sysmon: `wmic.exe` con `/node:` desde endpoint de usuario → nivel 8. `winrs.exe` desde proceso interactivo → nivel 10. `dsquery.exe` con scope completo de dominio desde endpoint de usuario → nivel 8. Regla PowerShell: `Invoke-Command -ComputerName` hacia IP interna desde equipo de usuario → nivel 10. Regla fuera de horario: cualquiera de las anteriores entre 22:00-07:00 → nivel +2. Correlación: 3+ herramientas administrativas distintas desde mismo endpoint en 300s → nivel 12. |
+| **MITRE ATT&CK** | T1021.006 — Remote Services: Windows Remote Management / T1047 — Windows Management Instrumentation / T1069 — Permission Groups Discovery |
+| **Severidad** | Media / Alta (según contexto) |
+| **Esfuerzo** | Medio — requiere CDB list de endpoints de usuario vs servidores de administración para contextualizar. |
+| **Falsos positivos** | Medios. Administradores de sistemas usan estas herramientas legítimamente. La clave es el origen: PC de usuario estándar vs servidor de administración. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.05.WIN.LAT.005 — Correlación: perfil de movimiento lateral activo
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Detección de la combinación de señales que configura un perfil de movimiento lateral activo: acceso a shares administrativos + autenticaciones laterales + herramientas de administración remota + conexiones RDP internas desde el mismo origen en ventana temporal. La correlación de múltiples señales confirma el incidente e identifica el endpoint pivote. |
+| **Clasificación GrayHats** | 5.1 Compromiso de cuenta con privilegios / 10.1 APT |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Correlación de alertas generadas por EP.05.WIN.LAT.001-004 y EP.02.WIN.EXEC.001-004 en el mismo `hostname` o `src_ip` en ventana temporal. |
+| **Lógica de detección** | Regla custom de segundo nivel: 2+ alertas de distintas fichas LAT.00* desde el mismo `src_ip` en 600s → nivel 12. Máxima prioridad: LAT.002 (admin shares) + LAT.003 (NTLM lateral) en mismo origen en 300s → nivel 12. Correlación extendida: cualquier LAT.00* + EP.02.WIN.CRED.00* en mismo hostname en 3600s → nivel 12. |
+| **MITRE ATT&CK** | T1021 — Remote Services / T1550 — Use Alternate Authentication Material / T1570 — Lateral Tool Transfer |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Alto — detección de tercer nivel dependiente de que las fichas LAT.001-004 estén operativas y campos IP normalizados. |
+| **Falsos positivos** | Muy bajos. Combinación de múltiples técnicas de movimiento lateral en ventana corta es prácticamente siempre un incidente real. |
+| **Nota operativa** | Cuando dispara, el endpoint origen es el pivote comprometido — contener origen y destinos simultáneamente. Iniciar respuesta a incidentes: aislamiento, volcado de memoria del endpoint origen, revisión de todos los destinos alcanzados. |
+| **Prerequisito** | Fichas EP.05.WIN.LAT.001-004 operativas y campos IP normalizados. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+##### EP-06 — Exfiltración o preparación de exfiltración
+
+> ¿Se están preparando o sacando datos desde el endpoint?
+
+---
+
+##### Fichas detalladas — EP-06 (Exfiltración)
+
+---
+
+###### EP.06.WIN.EXFIL.001 — Herramientas de transferencia de ficheros (rclone, WinSCP, curl, scp, ftp)
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante usa herramientas de transferencia de ficheros para exfiltrar datos desde el endpoint hacia un destino externo: `rclone` (sincronización con cloud storage), `WinSCP` (SFTP/SCP gráfico), `pscp.exe` (SCP de PuTTY), `curl` o `wget` con método PUT/POST, cliente FTP nativo. El indicador de exfiltración es el contexto: volumen de datos, destino externo, fuera de horario, proceso padre anómalo. |
+| **Clasificación GrayHats** | 7.1 Acceso no autorizado a información / 7.4 Pérdida de datos |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 1 — `rclone.exe`, `WinSCP.exe`, `pscp.exe`, `psftp.exe`, `ftp.exe` con argumentos de transferencia hacia IP externa. `curl.exe` o `wget.exe` con método `PUT`, `POST` o `--upload-file` hacia URL externa. PowerShell ScriptBlock Event ID 4104 — `Invoke-WebRequest` con método `PUT` o `POST` con fichero adjunto. Sysmon Event ID 3 — conexión saliente desde estas herramientas hacia IP externa en puertos 21, 22, 443. Sysmon Event ID 11 — creación de `rclone.conf` con credenciales de cloud storage. |
+| **Lógica de detección** | Regla Sysmon: `rclone.exe` ejecutado desde endpoint de usuario → nivel 10. Crítica: `rclone.exe` con argumento `copy` o `sync` hacia destino remoto → nivel 12. Regla: `pscp.exe` o `psftp.exe` con argumento de ruta local + destino externo → nivel 10. Regla: `ftp.exe` iniciando conexión saliente + comandos `put` o `mput` → nivel 10. Regla: `curl.exe` con `--upload-file` o `-T` hacia URL externa → nivel 8. Correlación: herramienta de transferencia + fichero comprimido en `%TEMP%` en 600s → nivel 12. |
+| **MITRE ATT&CK** | T1048 — Exfiltration Over Alternative Protocol / T1048.003 — Exfiltration Over Unencrypted Non-C2 Protocol / T1567 — Exfiltration Over Web Service |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Bajo-Medio — `rclone` y `pscp` raramente tienen uso legítimo en endpoints de usuario. `curl` y `ftp` tienen más FP — el argumento de upload es el discriminador. |
+| **Falsos positivos** | Medios para `curl` y `ftp`. Muy bajos para `rclone` y `pscp` en endpoints corporativos. |
+| **Nota operativa** | `rclone.conf` puede contener tokens de acceso a cloud storage — si se detecta su creación, revisar el contenido para identificar el servicio destino y revocar los tokens inmediatamente. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.06.WIN.EXFIL.002 — Subida a servicios cloud no autorizados
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un usuario o proceso sube datos corporativos a servicios cloud de almacenamiento o compartición no autorizados: Dropbox personal, Mega, WeTransfer, Pastebin, file.io, transfer.sh, Google Drive personal, OneDrive personal. La detección combina URL Filtering de Palo Alto con la actividad de procesos del navegador y herramientas de sincronización no autorizadas. |
+| **Clasificación GrayHats** | 7.1 Acceso no autorizado a información / 7.4 Pérdida de datos |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Palo Alto URL Filtering log — acceso a categorías `file-sharing`, `storage-backup` hacia dominios no autorizados (`mega.nz`, `wetransfer.com`, `dropbox.com` personal, `pastebin.com`, `file.io`). Sysmon Event ID 3 — conexión saliente desde navegador hacia IP de servicios cloud no autorizados con volumen de datos enviados elevado. Sysmon Event ID 1 — cliente de sincronización no autorizado (`MEGAsync.exe`, `Dropbox.exe` en ruta de usuario) instalado/ejecutado. |
+| **Lógica de detección** | Regla PA URL Filtering: acceso a `mega.nz`, `wetransfer.com`, `pastebin.com`, `file.io`, `transfer.sh` → nivel 6. Correlación: URL Filtering hacia file-sharing + volumen de datos subidos > 10MB → nivel 10. Regla Sysmon: cliente de sincronización no autorizado ejecutado desde endpoint corporativo → nivel 8. Crítica: cualquiera de las anteriores + fichero comprimido creado recientemente en 600s → nivel 12. |
+| **MITRE ATT&CK** | T1567.002 — Exfiltration to Cloud Storage / T1048 — Exfiltration Over Alternative Protocol |
+| **Severidad** | Alta |
+| **Esfuerzo** | Medio — requiere URL Filtering activo en Palo Alto. Sin PA la detección depende de procesos de cliente de sincronización (cobertura parcial). |
+| **Falsos positivos** | Medios. Empleados usan servicios cloud personales legítimamente. La correlación con volumen de datos y ficheros comprimidos recientes es el discriminador. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.06.WIN.EXFIL.003 — Copia masiva a dispositivos USB
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un usuario o proceso copia un volumen anómalo de ficheros a un dispositivo USB conectado al endpoint. Los dispositivos USB son un vector de exfiltración frecuente en insider threats y en ataques con acceso físico. La detección combina el evento de conexión del dispositivo, el volumen de ficheros copiados y la sensibilidad de los datos accedidos antes de la copia. |
+| **Clasificación GrayHats** | 7.1 Acceso no autorizado a información / 7.4 Pérdida de datos |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Security log — Event ID 6416 (A new external device was recognized) con `ClassName = DiskDrive` o `USB`. Sysmon Event ID 11 — creación masiva de ficheros en ruta de letra de unidad USB (`D:\`, `E:\`, `F:\`). Sysmon Event ID 1 — `robocopy.exe`, `xcopy.exe` con destino en letra de unidad USB. FIM — acceso de lectura masivo a carpetas de documentos seguido de escritura en unidad USB. |
+| **Lógica de detección** | Regla Security log: Event ID 6416 con dispositivo USB de almacenamiento → nivel 4. Correlación: Event ID 6416 + creación de 50+ ficheros en la unidad USB en 300s → nivel 10. Crítica: Event ID 6416 + copia de ficheros con extensiones sensibles (`.docx`, `.xlsx`, `.pdf`, `.pst`, `.db`, `.sql`, `.bak`) en volumen > 100MB en 600s → nivel 12. Regla: `robocopy` o `xcopy` con destino en unidad USB desde proceso interactivo fuera de horario → nivel 10. |
+| **MITRE ATT&CK** | T1052.001 — Exfiltration Over Physical Medium: Exfiltration over USB |
+| **Severidad** | Alta |
+| **Esfuerzo** | Medio — requiere configurar monitorización de letras de unidad removibles en FIM. El umbral debe ajustarse al baseline del cliente. |
+| **Falsos positivos** | Medios. Empleados copian ficheros a USB legítimamente. El discriminador es el volumen y tipo de ficheros. En clientes con política de USB bloqueado por GPO esta ficha no aplica. |
+| **Recomendación de hardening** | Implementar política de control de dispositivos USB (Windows Device Control o SentinelOne Device Control) para bloquear o limitar el uso de USB en endpoints corporativos. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.06.WIN.EXFIL.004 — Acceso masivo a carpetas sensibles o fuera de horario
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un usuario o proceso accede a un volumen inusualmente alto de ficheros en carpetas sensibles del endpoint o de shares de red, o realiza este acceso fuera del horario laboral habitual. Patrón de recolección de datos previo a la exfiltración, insider threat con descarga masiva antes de abandonar la empresa, o acceso con credenciales robadas. Complementa EP.02.WIN.POST.005 (compresión) con la fase previa de acceso y recolección. |
+| **Clasificación GrayHats** | 7.1 Acceso no autorizado a información / 8.1 Uso no autorizado de recursos |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | FIM — acceso de lectura masivo a `C:\Users\*\Documents\`, `\Desktop\`, `\Downloads\`, directorios de proyecto, shares de red montados. Sysmon Event ID 11 — creación de ficheros en ruta temporal con nombres copiados desde carpetas de documentos. Security log — Event ID 4663 (Object Access — fichero abierto) en volumen anómalo desde misma cuenta en ventana corta. Sysmon Event ID 1 — `xcopy`, `robocopy`, `Copy-Item` con origen en carpetas sensibles y destino en ruta temporal. |
+| **Lógica de detección** | Regla FIM: acceso de lectura a 100+ ficheros en `C:\Users\*\Documents\` en 300s desde proceso no de backup → nivel 8. Crítica: acceso a ficheros con extensiones sensibles (`.docx`, `.pdf`, `.xlsx`, `.pst`, `.msg`, `.kdbx`) en volumen > 500 ficheros en 600s → nivel 10. Regla fuera de horario: acceso masivo a carpetas sensibles entre 22:00-06:00 → nivel +2. Correlación: acceso masivo a documentos + compresión (EP.02.WIN.POST.005) en 600s → nivel 12. |
+| **MITRE ATT&CK** | T1005 — Data from Local System / T1074.001 — Data Staged: Local Data Staging / T1083 — File and Directory Discovery |
+| **Severidad** | Alta |
+| **Esfuerzo** | Medio-Alto — FIM sobre carpetas de usuario genera volumen alto de eventos. El umbral debe calibrarse con el baseline de actividad normal del cliente. |
+| **Falsos positivos** | Medios. Indexación de Windows, antivirus y backup generan el mismo patrón. Whitelist de procesos de indexación y backup conocidos. |
+| **Nota operativa** | Especialmente relevante para detección de insider threats en periodos críticos: empleados próximos a salida, procesos de M&A, empleados que han recibido oferta de empresa competidora. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.06.WIN.EXFIL.005 — Correlación: preparación y exfiltración confirmada
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Detección de la cadena completa de exfiltración: acceso masivo a datos + compresión/staging + transferencia hacia el exterior. La correlación de las tres fases confirma exfiltración activa con alta confianza y permite al SOC intervenir — idealmente cortando la transferencia antes de que todos los datos hayan salido. |
+| **Clasificación GrayHats** | 7.1 Acceso no autorizado a información / 7.4 Pérdida de datos |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Correlación de alertas generadas por EP.06.WIN.EXFIL.001-004 y EP.02.WIN.POST.005 en el mismo `hostname` en ventana temporal. |
+| **Lógica de detección** | Regla custom de segundo nivel: EXFIL.004 (acceso masivo) + EP.02.WIN.POST.005 (compresión) en mismo hostname en 1800s → nivel 12 (staging confirmado, exfiltración inminente). Regla crítica: POST.005 (compresión) + EXFIL.001 o EXFIL.002 (transferencia) en mismo hostname en 600s → nivel 12. Máxima prioridad: EXFIL.004 + POST.005 + EXFIL.001 en mismo hostname en 3600s → nivel 12 (cadena completa confirmada). |
+| **MITRE ATT&CK** | T1005 — Data from Local System / T1560 — Archive Collected Data / T1048 — Exfiltration Over Alternative Protocol / T1567 — Exfiltration Over Web Service |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Alto — detección de tercer nivel dependiente de que fichas EXFIL.001-004 y POST.005 estén operativas. |
+| **Falsos positivos** | Muy bajos. La cadena acceso masivo + compresión + transferencia en 1 hora es prácticamente siempre exfiltración real o ejercicio de red team. |
+| **Nota operativa** | El objetivo es intervenir antes de que la transferencia complete — bloquear la conexión saliente en el firewall, aislar el endpoint y notificar al cliente. Documentar el volumen de datos que puede haber salido antes de la detección para el informe de impacto. |
+| **Prerequisito** | Fichas EP.06.WIN.EXFIL.001-004 y EP.02.WIN.POST.005 operativas. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+##### EP-07 — Uso anómalo de herramientas legítimas (LOLBins)
+
+> ¿Se están usando herramientas legítimas de forma ofensiva?
+
+---
+
+##### Fichas detalladas — EP-07 (LOLBins)
+
+---
+
+###### EP.07.WIN.LOLBIN.001 — PowerShell ofensivo: obfuscación, AMSI bypass, reflective loading
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | PowerShell es usado de forma ofensiva más allá de la descarga y ejecución remota: técnicas de obfuscación para evadir detección basada en firmas (`-EncodedCommand`, string concatenation, `[char]` arrays), bypass de AMSI para ejecutar código malicioso sin que el AV lo inspeccione, y reflective loading de módulos en memoria sin tocar disco. Estas técnicas son características de operadores avanzados que intentan evadir controles de seguridad. |
+| **Clasificación GrayHats** | 2.1 Sistema infectado / 5.1 Compromiso de cuenta con privilegios |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | PowerShell ScriptBlock Event ID 4104 — `ScriptBlockText` conteniendo patrones de bypass AMSI (`AmsiScanBuffer`, `amsiInitFailed`, `[Ref].Assembly.GetType`), obfuscación (`[char][int]`, `join`, `replace` encadenados), o loading de módulos desde bytes (`[System.Reflection.Assembly]::Load`). Sysmon Event ID 1 — `powershell.exe` con argumento `-EncodedCommand` de longitud > 200 caracteres. |
+| **Lógica de detección** | Regla ScriptBlock: Event ID 4104 con `ScriptBlockText` conteniendo `AmsiScanBuffer`, `amsiInitFailed`, `[Ref].Assembly.GetType('System.Management.Automation.AmsiUtils')` → nivel 12. Regla: `[System.Reflection.Assembly]::Load([Convert]::FromBase64String` → nivel 12. Regla Sysmon: `powershell.exe` con `-EncodedCommand` de payload > 500 caracteres en base64 → nivel 10. Regla: `ScriptBlockText` con 5+ operaciones de string manipulation en una línea → nivel 8. Correlación: AMSI bypass + reflective loading en mismo proceso en 60s → nivel 12. |
+| **MITRE ATT&CK** | T1059.001 — PowerShell / T1027 — Obfuscated Files or Information / T1562.001 — Disable or Modify Tools (AMSI bypass) |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Medio — ScriptBlock logging debe estar activo (GPO). El volumen de Event ID 4104 puede ser alto — filtrar por patrones específicos de ofensiva. |
+| **Falsos positivos** | Bajos para AMSI bypass y reflective loading. Medios para detección de obfuscación (algunos scripts legítimos usan string manipulation). |
+| **Nota operativa** | ScriptBlock logging captura el código PowerShell desobfuscado — incluso con obfuscación compleja, el Event ID 4104 muestra el código real a ejecutar. Es la fuente forense más valiosa para investigar incidentes con PowerShell ofensivo. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.07.WIN.LOLBIN.002 — Proxy de ejecución: Regsvr32, Rundll32, Mshta, Cscript/Wscript
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Binarios legítimos de Windows son usados como proxy para ejecutar código malicioso, evadiendo controles basados en lista blanca de aplicaciones: `regsvr32.exe` con SCT remoto (Squiblydoo), `rundll32.exe` ejecutando DLL maliciosa o función JavaScript, `mshta.exe` ejecutando HTA con código VBScript/JScript, `cscript.exe`/`wscript.exe` ejecutando scripts maliciosos desde rutas temporales. |
+| **Clasificación GrayHats** | 2.1 Sistema infectado / 4.1 Explotación de vulnerabilidades conocidas |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 1 — `regsvr32.exe` con argumento `/s /n /u /i:http` (Squiblydoo). `rundll32.exe` con argumento no DLL de sistema o con función JavaScript (`javascript:`). `mshta.exe` con argumento URL o script inline. `cscript.exe` o `wscript.exe` con script en `%TEMP%` o `%APPDATA%`. Sysmon Event ID 3 — conexión saliente desde `regsvr32.exe` o `mshta.exe`. |
+| **Lógica de detección** | Regla Sysmon: `regsvr32.exe` con argumento `/i:http` o `/i:ftp` → nivel 12. `mshta.exe` con URL como argumento → nivel 12. `rundll32.exe` con argumento `javascript:` → nivel 12. Regla: `cscript.exe` o `wscript.exe` ejecutando script en ruta temporal → nivel 10. Regla Event ID 3: conexión saliente desde `regsvr32.exe`, `mshta.exe`, `cscript.exe`, `wscript.exe` → nivel 10. Correlación: proxy de ejecución + proceso hijo (cmd, powershell) en 30s → nivel 12. |
+| **MITRE ATT&CK** | T1218.010 — Regsvr32 / T1218.011 — Rundll32 / T1218.005 — Mshta / T1059.005 — VBScript / T1059.007 — JavaScript |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Bajo — patrones de uso ofensivo muy específicos. Regsvr32 con URL y Mshta con URL son prácticamente siempre maliciosos. |
+| **Falsos positivos** | Muy bajos para Regsvr32 y Mshta con URL. Medios para Rundll32 (muchos usos legítimos). La conexión de red desde estos binarios es el discriminador de mayor confianza. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.07.WIN.LOLBIN.003 — Netsh como proxy de red o persistencia
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | `netsh.exe` es usado de forma ofensiva: port forwarding para crear túneles de red (`netsh interface portproxy add`), desactivación del firewall de Windows (`netsh advfirewall set allprofiles state off`), o registro de DLL helper maliciosa para persistencia (`netsh add helper`). El port forwarding permite al atacante redirigir tráfico a través del endpoint comprometido hacia otros segmentos de red. |
+| **Clasificación GrayHats** | 2.1 Sistema infectado / 5.1 Compromiso de cuenta con privilegios |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 1 — `netsh.exe` con argumentos `interface portproxy add v4tov4`, `advfirewall set allprofiles state off`, `add helper`. Security log — Event ID 4950 (Windows Firewall setting changed) desde proceso no de administración. Sysmon Event ID 13 — modificación de `HKLM\SYSTEM\CurrentControlSet\Services\PortProxy\`. |
+| **Lógica de detección** | Regla Sysmon: `netsh.exe` con `interface portproxy add` → nivel 12. `netsh advfirewall set allprofiles state off` → nivel 12. `netsh add helper` con DLL en ruta no de sistema → nivel 12. Regla Security log: Event ID 4950 desde proceso no de administración → nivel 8. Regla Event ID 13: escritura en `\Services\PortProxy\` → nivel 10. |
+| **MITRE ATT&CK** | T1090.001 — Proxy: Internal Proxy / T1562.004 — Disable or Modify System Firewall / T1546.007 — Netsh Helper DLL |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Bajo — argumentos ofensivos de netsh muy específicos. `portproxy add` y `advfirewall set state off` raramente tienen uso legítimo desde procesos interactivos en endpoints de usuario. |
+| **Falsos positivos** | Bajos. Whitelist de cuentas de administración autorizadas para gestión de firewall. |
+| **Nota operativa** | El port forwarding mediante `netsh portproxy` persiste en el registro y sobrevive reinicios. Si se detecta, revisar `HKLM\SYSTEM\CurrentControlSet\Services\PortProxy\v4tov4\tcp` para identificar todos los forwards activos y eliminarlos. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.07.WIN.LOLBIN.004 — Cmd.exe encadenado con scripts complejos
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | `cmd.exe` es usado para ejecutar cadenas de comandos complejas con objetivos ofensivos: descarga y ejecución en una línea, pivoting de variables de entorno para evadir detección (`set c=cmd & !c!`), uso de `for` loops para iterar sobre sistemas de la red, o pipes complejos que procesan la salida de comandos de reconocimiento. Los one-liners de cmd son más difíciles de detectar que PowerShell porque no tienen ScriptBlock logging equivalente. |
+| **Clasificación GrayHats** | 2.1 Sistema infectado / 4.1 Explotación de vulnerabilidades conocidas |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 1 — `cmd.exe` con `CommandLine` de longitud > 200 caracteres conteniendo múltiples operadores de encadenamiento (`&&`, `||`, `|`, `^`, `%`). `CommandLine` con patrones de obfuscación de cmd (`set` + `!variable!`, `%variable:~N,M%`). Sysmon Event ID 1 — `cmd.exe /c` lanzado desde proceso no interactivo con payload complejo. |
+| **Lógica de detección** | Regla Sysmon: `cmd.exe` con `CommandLine` > 300 caracteres → nivel 6. Alta confianza: `cmd.exe` con patrón de obfuscación `set` + delayed expansion + ejecución → nivel 10. Regla: `cmd.exe /c` con múltiples `&&` encadenando herramientas ofensivas (certutil, bitsadmin, powershell, net) → nivel 10. Regla: `cmd.exe` ejecutado desde proceso de servicio o tarea programada con payload > 100 caracteres → nivel 10. Correlación: cmd con one-liner complejo + proceso hijo sospechoso en 30s → nivel 12. |
+| **MITRE ATT&CK** | T1059.003 — Windows Command Shell / T1027 — Obfuscated Files or Information |
+| **Severidad** | Alta |
+| **Esfuerzo** | Medio — `cmd.exe` con líneas largas tiene muchos usos legítimos en scripts de instalación. El contexto del proceso padre y la presencia de herramientas ofensivas son los discriminadores. |
+| **Falsos positivos** | Medios. Scripts de instalación legítimos usan cmd con comandos largos. La combinación longitud + herramientas ofensivas + proceso padre no interactivo es la señal más precisa. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.07.WIN.LOLBIN.005 — Certutil y Bitsadmin para decode/encode y evasión
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | `certutil.exe` y `bitsadmin.exe` son usados más allá de la descarga (cubierta en EP.02.WIN.POST.004) para codificar/decodificar payloads en base64 como técnica de evasión, o para crear BITS jobs persistentes con ejecución de comando al completar. `certutil -decode` es frecuentemente el segundo paso tras `certutil -urlcache` — el payload se descarga codificado y se decodifica localmente para evadir detección en tránsito. |
+| **Clasificación GrayHats** | 2.1 Sistema infectado / 4.1 Explotación de vulnerabilidades conocidas |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 1 — `certutil.exe` con argumento `-decode` o `-decodehex` sobre fichero en `%TEMP%` o `%APPDATA%`. `certutil.exe` con `-encode` sobre fichero ejecutable o script. `bitsadmin.exe` con `/create` + `/addfile` + `/resume`. `bitsadmin.exe` con `/SetNotifyCmdLine`. Sysmon Event ID 11 — fichero `.exe` o `.dll` creado en `%TEMP%` tras `certutil -decode`. |
+| **Lógica de detección** | Regla Sysmon: `certutil.exe` con `-decode` + fichero de salida en `%TEMP%` → nivel 10. Crítica: `certutil -decode` + creación de fichero ejecutable en ruta temporal en 30s → nivel 12. Regla: `bitsadmin.exe` con `/SetNotifyCmdLine` apuntando a proceso sospechoso → nivel 12. Regla: `certutil.exe` con `-encode` sobre fichero `.pst`, `.docx`, `.xlsx` → nivel 10 (posible exfiltración codificada). |
+| **MITRE ATT&CK** | T1140 — Deobfuscate/Decode Files or Information / T1197 — BITS Jobs / T1027 — Obfuscated Files or Information |
+| **Severidad** | Alta |
+| **Esfuerzo** | Bajo — argumentos ofensivos de certutil (`-decode`) específicos. BITS jobs con NotifyCmdLine son prácticamente siempre maliciosos. |
+| **Falsos positivos** | Bajos. `certutil -decode` en entornos corporativos no tiene uso legítimo frecuente fuera de gestión de certificados. |
+| **Relación con otros CU** | EP.02.WIN.POST.004 cubre certutil para descarga (`-urlcache`). Esta ficha cubre certutil para decode/encode — el segundo paso del patrón descarga + decode. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.07.WIN.LOLBIN.006 — Correlación: patrón LOLBin multi-herramienta
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante usa múltiples LOLBins en secuencia o combinación en el mismo endpoint en ventana temporal corta — patrón de operación ofensiva sistemática usando herramientas del sistema para evadir controles. La combinación de varias herramientas del bloque EP-07 eleva la confianza significativamente respecto a alertas individuales. |
+| **Clasificación GrayHats** | 2.1 Sistema infectado / 10.1 APT |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Correlación de alertas generadas por EP.07.WIN.LOLBIN.001-005 en el mismo `hostname` en ventana temporal. |
+| **Lógica de detección** | Regla custom de segundo nivel: 2+ alertas de distintas fichas LOLBIN.00* en el mismo hostname en 300s → nivel 12. Máxima prioridad: LOLBIN.001 (PowerShell ofensivo) + LOLBIN.002 (proxy de ejecución) en mismo hostname en 120s → nivel 12. Correlación extendida: cualquier LOLBIN.00* + EP.02.WIN.POST.004 (descarga) + NET.02.PALO.C2.* en mismo hostname en 3600s → nivel 12. |
+| **MITRE ATT&CK** | T1218 — System Binary Proxy Execution / T1059 — Command and Scripting Interpreter / T1027 — Obfuscated Files or Information |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Alto — detección de tercer nivel dependiente de que fichas LOLBIN.001-005 estén operativas. |
+| **Falsos positivos** | Muy bajos. Combinación de múltiples LOLBins en ventana corta es prácticamente siempre operación ofensiva. |
+| **Nota operativa** | SentinelOne debería complementar la cobertura de Wazuh detectando el comportamiento de los procesos hijos generados, no solo los LOLBins en sí. Si SentinelOne no detecta y Wazuh sí, investigar si el EDR está siendo evadido activamente. |
+| **Prerequisito** | Fichas EP.07.WIN.LOLBIN.001-005 operativas. |
+| **Estado** | Pendiente de validación. |
+
+---
+
 ##### EP-08 — Comportamiento anómalo del usuario o del equipo
 
 ---
@@ -956,6 +1353,99 @@ Detecciones orientadas a identificar actividad maliciosa, sospechosa o anómala 
 
 ---
 
+##### Fichas detalladas — EP-08 (Comportamiento anómalo del usuario)
+
+---
+
+###### EP.08.WIN.UBA.001 — Actividad fuera del horario habitual del usuario
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un usuario realiza actividad significativa en el endpoint fuera de su horario laboral habitual: inicio de sesión, ejecución de procesos, acceso a ficheros o conexiones de red en horas en las que normalmente no trabaja. No se trata de una actividad específicamente maliciosa sino de una desviación del patrón normal que puede indicar uso de credenciales robadas, insider threat, o acceso no autorizado. El contexto del cliente (turnos, trabajo en remoto, zonas horarias) es esencial para calibrar esta ficha. |
+| **Clasificación GrayHats** | 5.1 Compromiso de cuenta con privilegios / 7.1 Acceso no autorizado a información |
+| **Peligrosidad** | MEDIO |
+| **Telemetría** | Security log — Event ID 4624 (login exitoso) con timestamp fuera del horario habitual del usuario. Sysmon Event ID 1 — ejecución de procesos interactivos fuera de horario laboral. Event ID 4663 (Object Access) con acceso a ficheros sensibles fuera de horario. Sysmon Event ID 3 — conexiones de red salientes fuera de horario. |
+| **Lógica de detección** | Regla custom: Event ID 4624 LogonType 2 o 10 entre 22:00-06:00 para cuenta de usuario estándar → nivel 6. Alta confianza: Event ID 4624 en fin de semana o festivo desde cuenta no de turno → nivel 8. Regla: ejecución de proceso interactivo (cmd, powershell, navegador) entre 22:00-06:00 desde cuenta no técnica → nivel 6. Correlación: login fuera de horario + acceso a carpetas sensibles + conexión saliente en 600s → nivel 10. Regla adicional: cuenta con 0 logins en los últimos 30 días que inicia sesión → nivel 8 (cuenta inactiva usada). |
+| **MITRE ATT&CK** | T1078 — Valid Accounts / T1078.003 — Local Accounts |
+| **Severidad** | Media |
+| **Esfuerzo** | Alto — requiere definir el horario habitual de cada usuario o rol (CDB list por usuario o grupo AD). En entornos con trabajo en remoto o turnos variables la calibración es compleja. |
+| **Falsos positivos** | Altos sin calibración. Con whitelist de horarios por rol: medios. Trabajo urgente, viajes, cambios de turno generan FP — coordinación con RRHH necesaria. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.08.WIN.UBA.002 — Inicio de sesión desde equipo o ubicación no habitual
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un usuario inicia sesión desde un endpoint distinto al que usa habitualmente o desde una ubicación geográfica diferente. Patrón de uso de credenciales robadas, de movimiento lateral, o de impossible travel (el usuario no puede estar físicamente en dos lugares al mismo tiempo). |
+| **Clasificación GrayHats** | 5.1 Compromiso de cuenta con privilegios / 7.1 Acceso no autorizado a información |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Security log — Event ID 4624 con `WorkstationName` o `IpAddress` distinto al endpoint habitual del usuario. Event ID 4648 desde máquina no habitual. En el DC: Event ID 4624 del mismo usuario desde dos IPs geográficamente distantes en ventana corta. Complementariamente: GlobalProtect GP.002 (VPN desde ubicación anómala). |
+| **Lógica de detección** | Regla custom: Event ID 4624 desde `WorkstationName` no en CDB list de equipos habituales del usuario → nivel 8. Correlación: mismo usuario con Event ID 4624 desde 2+ `WorkstationName` distintos en 300s → nivel 10. Regla: login desde equipo de diferente departamento (según OU en AD) → nivel 8. Impossible travel: mismo usuario con Event ID 4624 desde IPs de países distintos en menos de 4 horas → nivel 12. |
+| **MITRE ATT&CK** | T1078 — Valid Accounts / T1078.002 — Domain Accounts |
+| **Severidad** | Alta |
+| **Esfuerzo** | Alto — requiere CDB list de equipos habituales por usuario (mínimo 30 días de baseline). Geolocalización de IPs para impossible travel. |
+| **Falsos positivos** | Medios. Cambio de puesto, visita a otra oficina, portátil vs desktop, trabajo desde casa. Proceso de excepción necesario. |
+| **Relación con otros CU** | Complementa NET.01.PALO.GP.002 (VPN desde ubicación anómala) con visibilidad de logins locales en red interna. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.08.WIN.UBA.003 — Ejecución de procesos inusuales para ese usuario o equipo
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un usuario ejecuta procesos que nunca o raramente ha ejecutado — herramientas de línea de comandos en un usuario que normalmente solo usa aplicaciones de negocio, herramientas de desarrollo en un equipo de contabilidad, o herramientas de administración de red en un PC de usuario estándar. La anomalía no está en el proceso en sí sino en su aparición en un contexto donde históricamente no se había visto. Señal débil individual pero valiosa en correlación. |
+| **Clasificación GrayHats** | 5.1 Compromiso de cuenta con privilegios / 3.1 Escaneo de redes (scanning) |
+| **Peligrosidad** | MEDIO |
+| **Telemetría** | Sysmon Event ID 1 — proceso ejecutado por primera vez en ese endpoint en los últimos 30 días. Security log — Event ID 4688 con proceso no habitual para el perfil del equipo. |
+| **Lógica de detección** | Regla custom: proceso ejecutado por primera vez en el endpoint en 30 días + pertenece a categoría de riesgo (herramientas de red, intérpretes, compresores) → nivel 6. Alta confianza: primera ejecución de herramienta de administración (netstat, ipconfig, whoami, net) por cuenta de usuario no técnico → nivel 8. Correlación: primera ejecución + Event ID 3 (conexión saliente desde esa herramienta) en 60s → nivel 10. Regla: proceso en ruta temporal ejecutado por primera vez → nivel 8. |
+| **MITRE ATT&CK** | T1078 — Valid Accounts / T1059 — Command and Scripting Interpreter |
+| **Severidad** | Media |
+| **Esfuerzo** | Alto — requiere mantener historial de procesos por endpoint (CDB lists actualizadas periódicamente o análisis de historial de alertas). |
+| **Falsos positivos** | Altos sin baseline. Con baseline de 30+ días: medios. Instalaciones de software y cambios de rol generan FP. |
+| **Nota operativa** | Mayor valor como señal de correlación que como alerta standalone. Proceso nuevo + actividad fuera de horario + acceso a carpetas sensibles es combinación de alta confianza aunque cada señal individual sea débil. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.08.WIN.UBA.004 — Uso intensivo de CPU/disco por proceso desconocido (criptominería, ransomware)
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un proceso desconocido o raramente ejecutado consume recursos intensivos de CPU o disco de forma sostenida — patrón compatible con criptominería (CPU/GPU intensivo), ransomware en fase de cifrado (CPU alta + I/O masivo de lectura/escritura), o exfiltración comprimida (CPU alta + I/O de lectura). La detección de consumo anómalo complementa la detección basada en firmas con una señal de impacto operacional. |
+| **Clasificación GrayHats** | 2.1 Sistema infectado / 6.6 Agotamiento de recursos |
+| **Peligrosidad** | MUY ALTO |
+| **Telemetría** | Wazuh módulo `wodle command` — consumo de CPU > umbral por proceso específico durante > 5 minutos. Sysmon Event ID 1 — proceso con nombre aleatorio o en ruta temporal. Sysmon Event ID 11 — creación masiva de ficheros con extensiones inusuales (`.locked`, `.encrypted`, extensión aleatoria de 5-8 caracteres). FIM — modificación masiva de ficheros de documentos en ventana corta. |
+| **Lógica de detección** | Regla Wazuh system monitor: proceso en `%TEMP%` con CPU > 80% durante > 300s → nivel 10 (posible criptominería). Regla FIM: modificación de 100+ ficheros con extensiones `.docx`, `.xlsx`, `.pdf` en 300s por el mismo proceso → nivel 12 (patrón de cifrado masivo — ransomware). Regla Sysmon: creación de ficheros con extensión no estándar en carpetas de documentos → nivel 12. Correlación: CPU alta + proceso en ruta temporal + conexión saliente en 600s → nivel 12 (criptominería con C2). |
+| **MITRE ATT&CK** | T1496 — Resource Hijacking / T1486 — Data Encrypted for Impact |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Medio — detección de ransomware por FIM directa. Detección de criptominería por CPU requiere módulo de monitorización de procesos de Wazuh. |
+| **Falsos positivos** | Medios para CPU alta (compilación, rendering, antivirus scan). Muy bajos para modificación masiva de extensiones de documentos. |
+| **Nota operativa** | Si se detecta patrón de ransomware (FIM con modificación masiva), aislar el endpoint inmediatamente — cada segundo permite cifrar más ficheros. No remediar en caliente; preservar para análisis forense y trabajar sobre backups. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.08.WIN.UBA.005 — Actividad administrativa desde usuario no técnico
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un usuario sin perfil técnico (contabilidad, RRHH, ventas, dirección) ejecuta herramientas o acciones de administración de sistemas fuera de su rol habitual: uso de PowerShell, acceso a `Computer Management`, modificación del registro, uso de `net user` o `net group`, instalación de software. Puede indicar compromiso de credenciales, escalada lograda, o insider threat con conocimientos técnicos. |
+| **Clasificación GrayHats** | 5.1 Compromiso de cuenta con privilegios / 7.1 Acceso no autorizado a información |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 1 — herramienta administrativa (`powershell.exe`, `cmd.exe`, `regedit.exe`, `mmc.exe`, `net.exe`, `wmic.exe`) ejecutada desde cuenta de usuario en OU no técnica. Security log — Event ID 4688 con herramienta administrativa desde cuenta no técnica. Event ID 4732 (añadido a grupo privilegiado) por cuenta no técnica. |
+| **Lógica de detección** | Regla custom: `powershell.exe` o `cmd.exe` desde cuenta en OU de RRHH, Contabilidad, Ventas, Dirección (CDB list de OUs no técnicas) → nivel 8. Alta confianza: `regedit.exe`, `mmc.exe`, `compmgmt.msc` desde cuenta no técnica → nivel 8. Regla: Event ID 4732 por cuenta no técnica → nivel 10. Regla: `net user /add` o `net localgroup administrators /add` desde cuenta no técnica → nivel 12. Correlación: 3+ herramientas administrativas desde misma cuenta no técnica en 300s → nivel 10. |
+| **MITRE ATT&CK** | T1078 — Valid Accounts / T1059.001 — PowerShell / T1087 — Account Discovery |
+| **Severidad** | Media / Alta (según herramienta y acción) |
+| **Esfuerzo** | Alto — requiere clasificación de usuarios por perfil técnico/no técnico en AD (atributo `Department` o membresía en OU). Sin esta clasificación los FP son muy altos. |
+| **Falsos positivos** | Altos sin clasificación. Con clasificación por OU: medios. Usuarios power-users en departamentos no técnicos generan FP. |
+| **Nota operativa** | Mayor efectividad combinada con UBA.001 (horario) — usuario de contabilidad ejecutando PowerShell a las 2AM es prácticamente siempre un incidente, mientras que a las 10AM podría tener justificación legítima. |
+| **Estado** | Pendiente de validación. |
+
+---
+
 ##### EP-09 — Violación de políticas de seguridad
 
 ---
@@ -973,6 +1463,117 @@ Detecciones orientadas a identificar actividad maliciosa, sospechosa o anómala 
 | **Severidad** | Media |
 | **Esfuerzo** | Bajo — solo configurar paths a monitorizar en `agent.conf`. |
 | **Falsos positivos** | Medios. Windows Update genera ruido en System32; mitigación con frecuencia diaria y whitelist de patrones. |
+
+---
+
+##### Fichas detalladas — EP-09 (Violación de políticas de seguridad)
+
+---
+
+###### EP.09.WIN.POL.001 — EDR SentinelOne parado, manipulado o desinstalado
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | El agente de SentinelOne en el endpoint ha sido detenido, manipulado o desinstalado. Esta es una de las acciones más críticas que puede realizar un atacante — sin EDR el endpoint queda prácticamente ciego para detecciones basadas en comportamiento. Dado que SentinelOne es el mecanismo de rollback ante ransomware, su eliminación es un precursor directo de ataque de ransomware. |
+| **Clasificación GrayHats** | 2.1 Sistema infectado / 5.1 Compromiso de cuenta con privilegios |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Security log — Event ID 7036 con `ServiceName` = `SentinelAgent` o `SentinelHelperService` en estado `stopped`. Event ID 7045 con nombre de servicio de SentinelOne (desinstalación). Wazuh — pérdida de heartbeat del agente en el endpoint. Sysmon Event ID 1 — `MsiExec.exe` con argumento de desinstalación del GUID de SentinelOne. FIM — modificación o eliminación de ficheros en `C:\Program Files\SentinelOne\`. |
+| **Lógica de detección** | Regla Security log crítica: Event ID 7036 con `ServiceName` conteniendo `Sentinel` y estado `stopped` → nivel 12. Regla: Event ID 7040 con cambio de tipo de inicio de servicio SentinelOne a `disabled` → nivel 12. Wazuh: agente sin heartbeat durante > 5 minutos → nivel 10. FIM: modificación de ficheros en directorio de SentinelOne por proceso distinto al agente oficial → nivel 12. Correlación: parada de SentinelOne + EP.03.WIN.DRV.002 (BYOVD) en 300s → nivel 12 (kill EDR mediante BYOVD confirmado). |
+| **MITRE ATT&CK** | T1562.001 — Impair Defenses: Disable or Modify Tools |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Bajo — parada del servicio SentinelOne es evento muy específico de alta confianza. |
+| **Falsos positivos** | Muy bajos. SentinelOne se detiene legítimamente solo durante actualizaciones del propio agente — whitelist de ventanas de mantenimiento y proceso de actualización oficial. |
+| **Nota operativa** | Notificar al cliente de forma inmediata. Si coincide con pérdida de heartbeat de Wazuh, el endpoint puede estar completamente comprometido. La combinación POL.001 + POL.003 (VSS eliminado) indica preparación completa para ransomware sin capacidad de rollback. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.09.WIN.POL.002 — Firewall local de Windows desactivado
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | El firewall local de Windows ha sido desactivado — acción que elimina una capa de defensa en profundidad y facilita conexiones entrantes y salientes sin restricción. En endpoints correctamente gestionados el firewall local debería mantenerse activo incluso con firewall perimetral. La desactivación puede indicar preparación para movimiento lateral, instalación de backdoor o evasión de controles. |
+| **Clasificación GrayHats** | 5.1 Compromiso de cuenta con privilegios / 2.1 Sistema infectado |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Security log — Event ID 4950 (Windows Firewall setting changed) con perfil desactivado. Event ID 7036 con `ServiceName = MpsSvc` en estado `stopped`. Sysmon Event ID 13 — modificación de `HKLM\SYSTEM\CurrentControlSet\Services\MpsSvc\Start` a valor `4` (disabled). |
+| **Lógica de detección** | Regla Security log: Event ID 4950 con perfil Domain, Private o Public desactivado → nivel 10. Regla: Event ID 7036 con `ServiceName = MpsSvc` en estado `stopped` → nivel 10. Regla Sysmon: Event ID 13 con `MpsSvc\Start = 4` → nivel 10. Correlación: desactivación del firewall + Event ID 4624 LogonType 3 (conexión entrante) en 300s → nivel 12. |
+| **MITRE ATT&CK** | T1562.004 — Impair Defenses: Disable or Modify System Firewall |
+| **Severidad** | Alta |
+| **Esfuerzo** | Bajo — Event ID 4950 y estado del servicio MpsSvc son eventos específicos de baja ambigüedad. |
+| **Falsos positivos** | Bajos. Whitelist de cuentas de administración autorizadas y ventanas de mantenimiento. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.09.WIN.POL.003 — Shadow Copies eliminadas o servicio VSS manipulado
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Las Shadow Copies han sido eliminadas o el servicio VSS ha sido manipulado. Las Shadow Copies son el mecanismo de recuperación de versiones anteriores de ficheros en Windows y la base del rollback automático de SentinelOne ante ransomware. Su eliminación es uno de los primeros pasos de prácticamente todos los ataques de ransomware modernos. Esta ficha tiene máxima prioridad operativa: su disparo debe interpretarse como precursor inmediato de ransomware o como ransomware ya activo. |
+| **Clasificación GrayHats** | 7.2 Modificación no autorizada de información / 2.1 Sistema infectado |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 1 — `vssadmin.exe delete shadows /all /quiet`, `wmic shadowcopy delete`, `wbadmin delete catalog -quiet`, `bcdedit /set {default} recoveryenabled No`, `bcdedit /set {default} bootstatuspolicy ignoreallfailures`. PowerShell ScriptBlock Event ID 4104 — `Get-WmiObject Win32_ShadowCopy | Remove-WmiObject`. Security log — Event ID 7036 con `ServiceName = VSS` en estado `stopped` de forma no planificada. |
+| **Lógica de detección** | Regla Sysmon crítica: `vssadmin.exe` con argumentos `delete shadows` → nivel 12. `wmic shadowcopy delete` → nivel 12. `bcdedit` con `/set recoveryenabled No` → nivel 12. Regla PowerShell: `Win32_ShadowCopy` con método `Delete` → nivel 12. Correlación máxima prioridad: eliminación de Shadow Copies + FIM con modificación masiva de ficheros en 600s → nivel 12 (VSS + cifrado activo — ransomware confirmado). POL.001 + POL.003 → nivel 12 (SentinelOne parado + VSS eliminado — preparación completa para ransomware sin rollback). |
+| **MITRE ATT&CK** | T1490 — Inhibit System Recovery / T1562.001 — Impair Defenses |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Muy bajo — comandos de eliminación de VSS extremadamente específicos y prácticamente nunca legítimos en endpoints de producción. Una de las detecciones de mayor relación señal/ruido del catálogo. |
+| **Falsos positivos** | Prácticamente nulos. `vssadmin delete shadows /all` fuera de procesos de administración de almacenamiento documentados es siempre malicioso o un error grave de administración. |
+| **Nota operativa** | **ACCIÓN INMEDIATA requerida. Tiempo de respuesta objetivo: menos de 5 minutos.** (1) Aislar el endpoint de la red inmediatamente. (2) Verificar si el cifrado ya ha comenzado (FIM). (3) Notificar al cliente de forma urgente. (4) No reiniciar — preservar estado de memoria para forense. (5) Si SentinelOne sigue activo, verificar disponibilidad de rollback antes de la eliminación de VSS. Sin SentinelOne activo y sin VSS, la única recuperación posible es desde backups externos — verificar su estado inmediatamente. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.09.WIN.POL.004 — Software prohibido instalado o ejecutado
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Se instala o ejecuta software explícitamente prohibido por la política de seguridad del cliente: clientes P2P (uTorrent, eMule), software de acceso remoto no autorizado (AnyDesk personal, TeamViewer no corporativo, UltraVNC), herramientas de tunelización (ngrok, frp, Cloudflared), o cualquier software en la lista negra del cliente. |
+| **Clasificación GrayHats** | 8.1 Uso no autorizado de recursos / 2.1 Sistema infectado |
+| **Peligrosidad** | MEDIO |
+| **Telemetría** | Sysmon Event ID 1 — `Image` conteniendo nombre de software prohibido. Event ID 11 — instalación en `Program Files` o `AppData` con nombre de aplicación prohibida. Sysmon Event ID 3 — conexión saliente desde software de acceso remoto no autorizado a servidores de relay conocidos. |
+| **Lógica de detección** | Regla Sysmon: `Image` conteniendo nombres de CDB list de software prohibido (`utorrent.exe`, `bittorrent.exe`, `anydesk.exe` en ruta no corporativa, `ngrok.exe`, `frpc.exe`, `cloudflared.exe`) → nivel 8. Alta confianza: `ngrok.exe` o `frpc.exe` ejecutados desde cualquier ruta → nivel 12. Regla Event ID 3: conexión desde AnyDesk o TeamViewer no corporativo a relay servers → nivel 8. |
+| **MITRE ATT&CK** | T1219 — Remote Access Software / T1572 — Protocol Tunneling / T1090 — Proxy |
+| **Severidad** | Media / Alta (ngrok y herramientas de túnel → Alta) |
+| **Esfuerzo** | Medio — requiere CDB list de software prohibido por cliente. `ngrok` y herramientas de túnel son detección directa sin lista. |
+| **Falsos positivos** | Medios para software de acceso remoto. Muy bajos para ngrok y herramientas de tunelización. |
+| **Nota operativa** | `ngrok` y herramientas similares crean túneles desde el interior de la red hacia Internet, exponiendo servicios internos sin pasar por el firewall perimetral. Tratar con urgencia independientemente de si el uso es malicioso o por negligencia. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.09.WIN.POL.005 — Macros de Office habilitadas o ejecutadas desde documento externo
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Se habilitan o ejecutan macros de Microsoft Office en un documento procedente de fuente externa. Las macros de Office son uno de los vectores de entrada más frecuentes en ataques de phishing — el documento malicioso solicita habilitar las macros para mostrar el contenido, y al hacerlo ejecuta el payload. |
+| **Clasificación GrayHats** | 4.1 Explotación de vulnerabilidades conocidas / 2.1 Sistema infectado |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 13 — modificación del registro para habilitar macros (`HKCU\Software\Microsoft\Office\*\Security\VBAWarnings = 1`). Sysmon Event ID 1 — proceso Office spawneando proceso hijo (cubierto en EP.02.WIN.EXPLOIT.001). FIM — creación de fichero ejecutable en `%TEMP%` por proceso Office. |
+| **Lógica de detección** | Regla Sysmon: Event ID 13 con `TargetObject` conteniendo `\Office\*\Security\VBAWarnings` con `Details = 1` → nivel 8. Alta confianza: `VBAWarnings = 1` modificado por proceso no de administración + apertura de fichero Office externo (Zone.Identifier = 3) en 60s → nivel 10. FIM: creación de `.exe` en `%TEMP%` por `WINWORD.EXE` → nivel 12. |
+| **MITRE ATT&CK** | T1566.001 — Phishing: Spearphishing Attachment / T1059.005 — VBScript / T1204.002 — User Execution: Malicious File |
+| **Severidad** | Alta |
+| **Esfuerzo** | Medio — cambio de registro VBAWarnings es directo. Correlación con Mark of the Web (Zone.Identifier) requiere FIM sobre streams ADS. |
+| **Falsos positivos** | Medios para cambio de VBAWarnings. Muy bajos para correlación cambio de registro + fichero externo + proceso hijo. |
+| **Recomendación de hardening** | GPO `VBAWarnings = 4` (deshabilitar todas las macros) o `= 3` (solo macros firmadas). Activar reglas ASR de Microsoft Defender para bloquear Office de crear procesos hijo. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.09.WIN.POL.006 — Software obsoleto o sin parches ejecutándose
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Se detecta la ejecución de software con versiones conocidas como vulnerables: navegadores sin actualizar, Java con versiones antiguas, Adobe Reader con CVEs activos, aplicaciones de negocio sin parches. La detección no es sobre un ataque activo sino sobre una postura de riesgo — el software obsoleto amplía la superficie de ataque del endpoint. |
+| **Clasificación GrayHats** | 9.5 Sistema vulnerable |
+| **Peligrosidad** | MEDIO |
+| **Telemetría** | Wazuh módulo `vulnerability-detector` — escaneo periódico de software instalado contra base de datos de CVEs (NVD, OSV). Sysmon Event ID 1 — `Image` con `FileVersion` de versión vulnerable (CDB list de versiones vulnerables por aplicación). |
+| **Lógica de detección** | Regla Wazuh vulnerability-detector: CVE de severidad CRITICAL o HIGH en software instalado activo → nivel 10. Regla: CVE con exploit público conocido (CISA KEV) en software activo → nivel 12. Regla Sysmon: navegadores o aplicaciones con `FileVersion` más antigua que umbral de días → nivel 6. Correlación: software vulnerable activo + intento de explotación (EXPLOIT.001) en mismo endpoint → nivel 12. |
+| **MITRE ATT&CK** | T1203 — Exploitation for Client Execution / T1190 — Exploit Public-Facing Application |
+| **Severidad** | Media (detección de riesgo) / Crítica (si correlaciona con explotación) |
+| **Esfuerzo** | Medio — vulnerability-detector requiere configuración y acceso a feeds de CVE actualizados. |
+| **Falsos positivos** | Medios. Software sin actualizar por ciclo de actualización lento o software legacy. Proceso de gestión de excepciones con justificación de negocio necesario. |
+| **Nota operativa** | Esta ficha es más una herramienta de gestión de postura de seguridad que de detección de incidentes activos. Recomendado generar informe periódico (semanal) de software vulnerable por cliente para priorizar actualizaciones. |
+| **Estado** | Pendiente de validación. |
 
 ---
 
@@ -1028,7 +1629,100 @@ Detecciones orientadas a identificar actividad maliciosa, sospechosa o anómala 
 
 ---
 
+##### Fichas detalladas — EP-10 (Evasión defensiva avanzada)
 
+---
+
+###### EP.10.WIN.DEF.001 — Parada de servicios de seguridad
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante detiene o deshabilita servicios de seguridad instalados en el endpoint más allá de SentinelOne: otros productos AV/EDR (Bitdefender GravityZone, CrowdStrike, Cylance), el agente Wazuh, servicios de monitorización, o servicios de backup. La parada sistemática de múltiples servicios de seguridad es señal de alta confianza de evasión activa de defensas. |
+| **Clasificación GrayHats** | 2.1 Sistema infectado / 5.1 Compromiso de cuenta con privilegios |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Security log — Event ID 7036 con `ServiceName` de productos de seguridad conocidos en estado `stopped`: `WazuhSvc`, `bdagent` (Bitdefender), `CSFalconService` (CrowdStrike), `CylanceSvc`, `MsMpEng` (Defender), `WinDefend`. Event ID 7040 con tipo de inicio a `disabled`. Sysmon Event ID 1 — `sc.exe stop` o `net stop` con nombre de servicio de seguridad. PowerShell ScriptBlock Event ID 4104 — `Stop-Service` con nombre de servicio de seguridad. |
+| **Lógica de detección** | Regla Security log: Event ID 7036 con `ServiceName` en CDB list de servicios de seguridad en estado `stopped` → nivel 10. Crítica: mismo patrón + proceso que lo detiene no es el instalador oficial → nivel 12. Regla Sysmon: `sc.exe stop` o `net stop` con servicio de seguridad desde proceso interactivo → nivel 12. Correlación: parada de 2+ servicios de seguridad distintos en 300s → nivel 12 (desmantelamiento sistemático de defensas). |
+| **MITRE ATT&CK** | T1562.001 — Impair Defenses: Disable or Modify Tools |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Bajo — CDB list de servicios de seguridad conocidos es estática y bien definida. |
+| **Falsos positivos** | Bajos. Servicios de seguridad se detienen legítimamente solo en actualizaciones o mantenimiento autorizado. |
+| **Nota operativa** | La parada del agente Wazuh (`WazuhSvc`) elimina la visibilidad del SOC sobre el endpoint. Si se detecta parada de Wazuh + pérdida de heartbeat, tratar como endpoint comprometido e iniciar respuesta proactiva. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.10.WIN.DEF.002 — Cambios en exclusiones de AV/Defender
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante añade exclusiones al antivirus o EDR para que su malware no sea escaneado: exclusiones de ruta, proceso o extensión en Microsoft Defender. La adición de exclusiones en rutas temporales o para procesos desconocidos es un indicador claro de evasión. |
+| **Clasificación GrayHats** | 2.1 Sistema infectado / 5.1 Compromiso de cuenta con privilegios |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 13 — escritura en `HKLM\SOFTWARE\Microsoft\Windows Defender\Exclusions\Paths\`, `\Exclusions\Processes\`, `\Exclusions\Extensions\`. Event ID 5007 del canal `Windows Defender/Operational` (configuración cambiada). PowerShell ScriptBlock Event ID 4104 — `Add-MpPreference -ExclusionPath`, `Add-MpPreference -ExclusionProcess`. |
+| **Lógica de detección** | Regla Sysmon: Event ID 13 con `TargetObject` conteniendo `\Windows Defender\Exclusions\Paths\` con `Details` apuntando a ruta temporal o de usuario → nivel 12. Regla: exclusión de proceso añadida para proceso en ruta anómala → nivel 12. Regla PowerShell: `Add-MpPreference -ExclusionPath` o `-ExclusionProcess` desde proceso no de gestión → nivel 12. Correlación: exclusión añadida + creación de fichero en la ruta excluida en 60s → nivel 12. |
+| **MITRE ATT&CK** | T1562.001 — Impair Defenses: Disable or Modify Tools |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Bajo — claves de registro de exclusiones de Defender muy específicas. |
+| **Falsos positivos** | Medios. Administradores añaden exclusiones legítimas para aplicaciones con FP. Whitelist de cuentas autorizadas para gestión de exclusiones. |
+| **Nota operativa** | Revisar periódicamente las exclusiones de Defender en todos los endpoints. Si se detecta exclusión hacia ruta temporal, revisar el contenido de esa ruta inmediatamente antes de eliminarlo. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.10.WIN.DEF.003 — Borrado de logs de Windows (todos los canales)
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante borra los logs de eventos de Windows para eliminar rastros de su actividad. Más allá del Security log (cubierto en AUDIT.001), esta ficha cubre el borrado de cualquier otro canal: System, Application, PowerShell, Sysmon, Task Scheduler, WMI. El borrado selectivo de canales específicos revela qué técnicas usó el atacante. |
+| **Clasificación GrayHats** | 5.1 Compromiso de cuenta con privilegios / 7.2 Modificación no autorizada de información |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | System log — Event ID 104 (System log cleared). Sysmon Event ID 1 — `wevtutil.exe cl` con nombre de canal. PowerShell ScriptBlock Event ID 4104 — `Clear-EventLog`, `Remove-EventLog`, `wevtutil cl`. Sysmon Event ID 1 — `wevtutil.exe el` seguido de `cl` en múltiples canales. |
+| **Lógica de detección** | Regla Sysmon: `wevtutil.exe` con argumento `cl` → nivel 12. Regla: `wevtutil.exe el` + `cl` en múltiples canales en 120s → nivel 12 (borrado sistemático). Regla PowerShell: `Clear-EventLog` desde proceso no de mantenimiento → nivel 12. Regla System log: Event ID 104 → nivel 10. Correlación: borrado de canal PowerShell/Operational + canal Sysmon en 60s → nivel 12. |
+| **MITRE ATT&CK** | T1070.001 — Indicator Removal: Clear Windows Event Logs |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Bajo — `wevtutil cl` es comando específico de baja ambigüedad. Borrado de canales como PowerShell/Operational o Sysmon es prácticamente siempre malicioso. |
+| **Falsos positivos** | Muy bajos. Whitelist de procesos y cuentas de mantenimiento autorizados. |
+| **Nota operativa** | El borrado selectivo de canales revela las técnicas usadas: solo PowerShell/Operational borrado → el atacante usó PowerShell; solo Sysmon borrado → usó técnicas que Sysmon detecta. Documentar qué canales se borraron como evidencia forense. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.10.WIN.DEF.004 — Herramientas anti-forense (SDelete, timestomping, Eraser)
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Un atacante usa herramientas diseñadas para dificultar el análisis forense: `SDelete` (sobrescritura segura de ficheros), `cipher /w` (sobrescritura del espacio libre), `Eraser`, `BleachBit`, modificación de timestamps de ficheros (timestomping), o limpieza del historial de PowerShell. El objetivo es dificultar la reconstrucción de la cadena de ataque. |
+| **Clasificación GrayHats** | 5.1 Compromiso de cuenta con privilegios / 7.2 Modificación no autorizada de información |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Sysmon Event ID 1 — `sdelete.exe`, `sdelete64.exe`, `eraser.exe`, `bleachbit.exe` con argumentos de borrado seguro. `cipher.exe /w`. PowerShell ScriptBlock Event ID 4104 — `[System.IO.File]::SetCreationTime`, `SetLastWriteTime`, `SetLastAccessTime` (timestomping). Sysmon Event ID 2 (File creation time changed) — modificación de timestamp de fichero por proceso no de backup. |
+| **Lógica de detección** | Regla Sysmon: `sdelete.exe` ejecutado desde endpoint de producción → nivel 10. `cipher.exe /w` desde proceso interactivo → nivel 8. `eraser.exe` o `bleachbit.exe` → nivel 8. Regla Event ID 2: modificación de timestamp de fichero `.exe`, `.dll`, `.ps1` por proceso distinto al creador → nivel 10 (timestomping). Regla PowerShell: `SetCreationTime` o `SetLastWriteTime` sobre fichero ejecutable → nivel 10. Correlación: SDelete + borrado de logs (DEF.003) en 300s → nivel 12. |
+| **MITRE ATT&CK** | T1070.004 — Indicator Removal: File Deletion / T1070.006 — Indicator Removal: Timestomp / T1485 — Data Destruction |
+| **Severidad** | Alta |
+| **Esfuerzo** | Medio — SDelete y herramientas de borrado seguro directas. Timestomping vía Event ID 2 requiere Sysmon configurado para capturar cambios de timestamp. |
+| **Falsos positivos** | Medios para herramientas de borrado seguro (uso legítimo en equipos con datos sensibles). Bajos para timestomping. |
+| **Nota operativa** | El timestomping distorsiona la línea temporal del incidente. El Event ID 2 de Sysmon registra el timestamp anterior y el nuevo — usar estos datos para reconstruir la línea temporal real del ataque. |
+| **Estado** | Pendiente de validación. |
+
+---
+
+###### EP.10.WIN.DEF.005 — Correlación: perfil completo de evasión defensiva
+
+| Campo | Detalle |
+|---|---|
+| **Descripción** | Detección de la combinación de múltiples técnicas de evasión defensiva en el mismo endpoint en ventana temporal — patrón de atacante avanzado en fase de preparación para la acción principal (ransomware, exfiltración, persistencia de larga duración). |
+| **Clasificación GrayHats** | 2.1 Sistema infectado / 10.1 APT |
+| **Peligrosidad** | ALTO |
+| **Telemetría** | Correlación de alertas generadas por EP.10.WIN.DEF.001-004, EP.10.WIN.AUDIT.001-002, EP.10.WIN.AV.001, EP.09.WIN.POL.001-003 en el mismo `hostname` en ventana temporal. |
+| **Lógica de detección** | Regla custom de segundo nivel: 2+ alertas de distintas fichas DEF.00*, AUDIT.00* o POL.00* en mismo hostname en 600s → nivel 12. Máxima prioridad: POL.001 (SentinelOne parado) + POL.003 (VSS eliminado) + DEF.003 (logs borrados) en 900s → nivel 12 (preparación completa para ransomware). Correlación extendida: cualquier DEF.00* + EP.06.WIN.EXFIL.00* en mismo hostname en 3600s → nivel 12 (evasión + exfiltración activa). |
+| **MITRE ATT&CK** | T1562 — Impair Defenses / T1070 — Indicator Removal / T1490 — Inhibit System Recovery |
+| **Severidad** | Crítica |
+| **Esfuerzo** | Alto — detección de tercer nivel dependiente de que fichas DEF.001-004 y EP-09/EP-10 relacionadas estén operativas. |
+| **Falsos positivos** | Prácticamente nulos. Combinación de múltiples técnicas de evasión en ventana corta es siempre ataque avanzado en curso. |
+| **Nota operativa** | Combinación POL.001 + POL.003 + DEF.003 indica ransomware a minutos — tiempo de respuesta objetivo inferior a 5 minutos: (1) aislar endpoint de la red, (2) verificar estado de backups del cliente, (3) notificar al cliente de forma urgente, (4) preservar evidencias forenses. |
+| **Prerequisito** | Fichas EP.10.WIN.DEF.001-004, EP.09.WIN.POL.001-003 y EP.10.WIN.AUDIT.001-002 operativas. |
+| **Estado** | Pendiente de validación. |
+
+---
 
 ---
 
